@@ -11,8 +11,8 @@ RUN apt-get update -y && apt-get upgrade -y \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY . /app
-
 RUN pip install -r requirements.txt
 
+COPY . /app
+RUN python fix_credit.py
 CMD ["python", "main.py"]
