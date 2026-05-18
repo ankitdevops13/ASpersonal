@@ -36,7 +36,7 @@ This is a powerful Telegram bot built using **Python** and **Pyrogram**.
 ## 📦 Installation
 
 ```bash
-git clone https://github.com/ankitdevops13/REPO-NAME
+git clone https://github.com/ankitdevops13/ASpersonal
 cd ASpersonal
 pip install -r requirements.txt
 python main.py
