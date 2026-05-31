@@ -12,6 +12,7 @@ import asyncio
 import requests
 import subprocess
 import urllib.parse
+from urllib.parse import urlparse, parse_qs, quote
 import cloudscraper
 import datetime
 import random
@@ -173,6 +174,35 @@ def convert_url(url, format_type='dash'):  # Default ab DASH
         url
     )
 
+def extract_id(url):
+    """
+    Extract content ID from different URL formats.
+    
+    Handles three types:
+    1. Direct content ID in path: .../contentid=U2FsdGVkX...
+    2. Query parameter style: ...?contentId=U2FsdGVkX...
+    3. Hash ID style: ...master.m3u8&contentHashIdl=U2FsdGVkX...
+    """
+    
+    # Pattern 1: contentid=... in the path (case insensitive)
+    pattern1 = r'contentid=([A-Za-z0-9+/=]+)'
+    match1 = re.search(pattern1, url, re.IGNORECASE)
+    if match1:
+        return match1.group(1)
+    
+    # Pattern 2: contentId=... as query parameter
+    pattern2 = r'[?&]contentId=([A-Za-z0-9+/=]+)'
+    match2 = re.search(pattern2, url, re.IGNORECASE)
+    if match2:
+        return match2.group(1)
+    
+    # Pattern 3: contentHashIdl=... (typo "Idl" instead of "Id")
+    pattern3 = r'contentHashIdl=([A-Za-z0-9+/=]+)'
+    match3 = re.search(pattern3, url, re.IGNORECASE)
+    if match3:
+        return match3.group(1)
+    
+    return None
 
 bot = Client(
     "bot",
@@ -819,27 +849,12 @@ async def upload(bot: Client, m: Message):
 
 
             
-            elif "contentId=" in url or "master.m3u8&contentHashIdl=" in url:
+            elif 'contentId=' in url or "master.m3u8&contentHashIdl=" in url:
                 # Extract content ID from URL
-                content = url.split("contentId=")[1].strip()
+                content = extract_id(url)
                 
                 # Remove query params if any
-                content = content.split("&")[0]
                 
-                # Remove .m3u8 suffix safely
-                if content.endswith(".m3u8"):
-                    content = content[:-5]
-                
-                # Remove trailing slash
-                content = content.rstrip("/")
-                
-                # Handle special case for master.m3u8&contentHashIdl=
-                if "master.m3u8&contentHashIdl=" in url:
-                    content = url.split("master.m3u8&contentHashIdl=")[1].strip()
-                    content = content.split("&")[0]
-                    if content.endswith(".m3u8"):
-                        content = content[:-5]
-                    content = content.rstrip("/")
                 
                 # URL encode the content ID
                 encoded_content = urllib.parse.quote(content, safe="")
@@ -864,7 +879,7 @@ async def upload(bot: Client, m: Message):
                 api_url = f"https://api.classplusapp.com/cams/uploader/video/jw-signed-url?contentId={encoded_content}"
                 
                 try:
-                    response = requests.get(api_url, headers=headers, timeout=20)
+                    response = requests.get(api_url, headers=headers, timeout=30)
                     response_json = response.json()
                     
                     final_url = None
@@ -892,7 +907,7 @@ async def upload(bot: Client, m: Message):
                 except Exception as e:
                     print(f"Request Error: {e}")
             else:
-                print("Invalid Link")
+                print("Invalid Link")  
 
             if 'content.allen.in' in url:
              url = convert_url(url, 'dash')
