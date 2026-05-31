@@ -161,6 +161,18 @@ def is_authorized(user_id: int) -> bool:
 
 
 
+def convert_url(url, format_type='dash'):  # Default ab DASH
+    path_map = {
+        'dash': 'playlists/ALLEN/x264/dash.mpd',
+        'm3u8': 'playlists/ALLEN/x264/master.m3u8'
+    }
+    
+    return re.sub(
+        r'transcodedVideos/ALLEN/transcoded_video_x264_5000k_HD',
+        path_map.get(format_type, path_map['dash']),
+        url
+    )
+
 
 bot = Client(
     "bot",
@@ -881,6 +893,13 @@ async def upload(bot: Client, m: Message):
                     print(f"Request Error: {e}")
             else:
                 print("Invalid Link")
+
+            if 'content.allen.in' in url:
+             url = convert_url(url, 'dash')
+             fallback_url = convert_url(url, 'm3u8')
+            
+             print("First Change Url:", url)
+             print("Fallback Change url:", fallback_url)
                 
             if "/master.mpd" in url or "d1d34p8vz63oiq" in url or "sec1.pw.live" in url:
              id =  url.split("/")[-2]
