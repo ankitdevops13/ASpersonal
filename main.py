@@ -849,7 +849,7 @@ async def upload(bot: Client, m: Message):
 
 
             
-            elif 'contentId=' in url or "master.m3u8&contentHashIdl=" in url:
+            elif 'https//:contentId=' in url or "master.m3u8&contentHashIdl=" in url:
                 # Extract content ID from URL
                 content = extract_id(url)
                 
@@ -861,7 +861,7 @@ async def upload(bot: Client, m: Message):
                 
                 headers = {
                     'host': 'api.classplusapp.com',
-                    'x-access-token': f'{raw_text4}',    
+                    'x-access-token': raw_text4,    
                     'accept-language': 'EN',
                     'api-version': '18',
                     'app-version': '1.4.73.2',
