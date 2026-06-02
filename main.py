@@ -862,7 +862,7 @@ async def upload(bot: Client, m: Message):
 
 
             
-            elif 'https//:contentId=' in url or "master.m3u8&contentHashIdl=" in url:
+            elif 'contentId' in url or 'master.m3u8&contentHashIdl=' in url:
                 # Extract content ID from URL
                 url = unquote(url)
                 content = extract_id(url)
