@@ -203,6 +203,27 @@ def extract_id(url):
         return match3.group(1)
     
     return None
+def wake_player():
+    try:
+        requests.get("https://learnwithpw-recorded.onrender.com", timeout=10)
+        time.sleep(8)
+    except:
+        pass
+        
+PLAYER_BASE = "https://learnwithpw-recorded.onrender.com/play?v="
+
+def pw_player(url):
+    decoded = urllib.parse.quote(url)
+
+    # dash → master.m3u8
+    decoded = re.sub(r'/dash/[^/]+/[0-9]+\.mp4', '/master.m3u8', decoded)
+
+    # encode for player
+    encoded = urllib.parse.quote(decoded, safe="")
+
+    return PLAYER_BASE + encoded
+
+
 
 bot = Client(
     "bot",
@@ -909,6 +930,11 @@ async def upload(bot: Client, m: Message):
             else:
                 print("Invalid Link")  
 
+            if "pw.live" in url or "sec-prod-mediacdn" in url:
+             wake_player()
+             url = pw_player(url)
+             print("PW Player URL:", url)
+                
             if 'content.allen.in' in url:
              url = convert_url(url, 'dash')
              fallback_url = convert_url(url, 'm3u8')
