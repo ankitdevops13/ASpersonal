@@ -12,7 +12,7 @@ import asyncio
 import requests
 import subprocess
 import urllib.parse
-from urllib.parse import urlparse, parse_qs, quote
+from urllib.parse import urlparse, parse_qs, quote, unquote
 import cloudscraper
 import datetime
 import random
