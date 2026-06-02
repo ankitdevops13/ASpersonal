@@ -174,35 +174,27 @@ def convert_url(url, format_type='dash'):  # Default ab DASH
         url
     )
 
+
+import re
+
 def extract_id(url):
-    """
-    Extract content ID from different URL formats.
+    patterns = [
+        r'contentid=([A-Za-z0-9+/=_-]+)\.m3u8',  # .m3u8 ke pehle tak
+        r'contentId=([A-Za-z0-9+/=_-]+)\.m3u8',
+        r'contentHashIdl=([A-Za-z0-9+/=_-]+)\.m3u8',
+        # Fallback: kuch bhi ho, contentId= ke baad se .m3u8 tak
+        r'contentId=([^\.]+)\.m3u8',
+        r'contentid=([^\.]+)\.m3u8',
+    ]
     
-    Handles three types:
-    1. Direct content ID in path: .../contentid=U2FsdGVkX...
-    2. Query parameter style: ...?contentId=U2FsdGVkX...
-    3. Hash ID style: ...master.m3u8&contentHashIdl=U2FsdGVkX...
-    """
-    
-    # Pattern 1: contentid=... in the path (case insensitive)
-    pattern1 = r'contentid=([A-Za-z0-9+/=]+)'
-    match1 = re.search(pattern1, url, re.IGNORECASE)
-    if match1:
-        return match1.group(1)
-    
-    # Pattern 2: contentId=... as query parameter
-    pattern2 = r'[?&]contentId=([A-Za-z0-9+/=]+)'
-    match2 = re.search(pattern2, url, re.IGNORECASE)
-    if match2:
-        return match2.group(1)
-    
-    # Pattern 3: contentHashIdl=... (typo "Idl" instead of "Id")
-    pattern3 = r'contentHashIdl=([A-Za-z0-9+/=]+)'
-    match3 = re.search(pattern3, url, re.IGNORECASE)
-    if match3:
-        return match3.group(1)
-    
+    for pat in patterns:
+        match = re.search(pat, url, re.IGNORECASE)
+        if match:
+            return match.group(1)
     return None
+
+  
+# Output: U2FsdGVkX1+QnOQswJRI2Bw3dko9QWqx+vjqjCK3w+c=
 def wake_player():
     try:
         requests.get("https://learnwithpw-recorded.onrender.com", timeout=10)
@@ -872,6 +864,7 @@ async def upload(bot: Client, m: Message):
             
             elif 'https//:contentId=' in url or "master.m3u8&contentHashIdl=" in url:
                 # Extract content ID from URL
+                url = unquote(url)
                 content = extract_id(url)
                 
                 # Remove query params if any
@@ -897,7 +890,7 @@ async def upload(bot: Client, m: Message):
                     'accept-encoding': 'gzip'
                 }
                 
-                api_url = f"https://api.classplusapp.com/cams/uploader/video/jw-signed-url?contentId={encoded_content}"
+                api_url = f"https://api.classplusapp.com/cams/uploader/video/jw-signed-url?contentId={content}"
                 
                 try:
                     response = requests.get(api_url, headers=headers, timeout=30)
