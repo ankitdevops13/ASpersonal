@@ -21,4 +21,4 @@ COPY . /app
 
 RUN python fix_credit.py
 
-CMD ["python", "main.py"]
+CMD ["python", "ankit.py"]
