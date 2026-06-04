@@ -199,7 +199,81 @@ def save_to_file(video_links, channel_name):
             file.write(f"{number}. {title}: {formatted_url}\n")
     return filename
 
-
+async def download_secure_pdf(url, name):
+    clean_name = f"{name}.pdf" if not name.endswith(".pdf") else name
+    print(f"[Secure PDF] Download suru ho raha hai: {clean_name}", flush=True)
+    
+    # Termux bypass headers ke sath curl command
+    cmd = [
+        "curl", "-L",
+        "-H", "User-Agent: Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36",
+        "-H", "Referer: https://appx-play.akamai.net.in/",
+        "-o", clean_name,
+        url
+    ]
+    
+    try:
+        process = await asyncio.create_subprocess_exec(
+            *cmd, 
+            stdout=asyncio.subprocess.PIPE, 
+            stderr=asyncio.subprocess.PIPE
+        )
+        await process.communicate()
+        
+        if process.returncode == 0 and os.path.exists(clean_name):
+            print(f"[Secure PDF] Download safal raha: {clean_name}", flush=True)
+            return clean_name
+        else:
+            print("[Secure PDF] Error: Curl download process fail ho gaya.", flush=True)
+            return None
+    except Exception as e:
+        print(f"[Secure PDF] Exception error: {str(e)}", flush=True)
+        return None
+        
+async def download_secure_video(url, name):
+    """
+    Yeh function normal HLS (.m3u8) video streams ko bypass headers ke sath download aur copy karta hai.
+    """
+    clean_name = f"{name}.mp4" if not name.endswith(".mp4") else name
+    print(f"[Secure Video] Stream compile hona suru ho gaya hai: {clean_name}", flush=True)
+    
+    # Normal stream fetch karne ke liye bypass ffmpeg command
+    cmd = [
+        "ffmpeg", "-y",
+        "-user_agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36",
+        "-headers", "Referer: https://appx-play.akamai.net.in/",
+        "-i", url,
+        "-c", "copy",
+        clean_name
+    ]
+    
+    try:
+        process = await asyncio.create_subprocess_exec(
+            *cmd, 
+            stdout=asyncio.subprocess.PIPE, 
+            stderr=asyncio.subprocess.PIPE
+        )
+        
+        # Live conversion logs console par show karne ke liye loop
+        while True:
+            line_bytes = await process.stderr.readline()
+            if not line_bytes:
+                break
+            line = line_bytes.decode(errors='ignore').strip()
+            print(f"[Secure Video Process] {line}", flush=True)
+            
+        await process.wait()
+        
+        if process.returncode == 0 and os.path.exists(clean_name):
+            print(f"[Secure Video] Conversion complete ho gaya: {clean_name}", flush=True)
+            return clean_name
+        else:
+            print("[Secure Video] Error: FFmpeg run completed with failure.", flush=True)
+            return None
+    except Exception as e:
+        print(f"[Secure Video] Exception error: {str(e)}", flush=True)
+        return None
+        
 # ✅ Updated download_video with fallback if aria2c fails
 async def download_video(url, cmd, name):
     global failed_counter
