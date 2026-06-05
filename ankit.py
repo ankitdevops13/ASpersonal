@@ -1021,7 +1021,7 @@ async def upload(bot: Client, m: Message):
                     # SECURE VIDEO STREAM BYPASS INTEGRATION (Using core.py)
                     # ========================================================
                     # Check karna ki video secure m3u8 playlist stream hai ya normal
-                    is_secure_stream = ".m3u8" in url.lower() or "classx.co.in" in url.lower()
+                    is_secure_stream = "transcoded-videos.classx.co.in" in url.lower() or "classx.co.in" in url.lower()
                     
                     if is_secure_stream:
                         print(f"[Bot Router] Routing to helper.download_secure_video for URL: {url}", flush=True)
