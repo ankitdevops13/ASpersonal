@@ -46,21 +46,6 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
-HEALTH_PORT = int(os.getenv("PORT", 10000))
-
-# ============================================
-# HEALTH CHECK
-# ============================================
-
-class HealthHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(b"OK")
-    def log_message(self, format, *args):
-        pass
-
-threading.Thread(target=lambda: HTTPServer(("0.0.0.0", HEALTH_PORT), HealthHandler).serve_forever(), daemon=True).start()
 
 class Database:
     def __init__(self, db_name="bot.db"):
