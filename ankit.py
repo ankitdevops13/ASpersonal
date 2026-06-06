@@ -966,12 +966,15 @@ async def upload(bot: Client, m: Message):
 
             if '/master.mpd' in url:
                 access_token = raw_text4
-                result = await get_signed_m3u8_url(access_token, url)
-                if result:
-                    return f"✅ Succes {result}"
+                url = await get_signed_m3u8_url(access_token, url)
+                wake_player()
+                url = pw_player(url)
+                if url:
+                    return f"✅ Succes {url}"
 
                 return "❌ failed to get signed url"
-                
+
+            
             if 'content.allen.in' in url:
              url = convert_url(url, 'dash')
              fallback_url = convert_url(url, 'm3u8')
