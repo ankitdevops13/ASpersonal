@@ -6,11 +6,10 @@ from flask import Flask, request, send_file, jsonify
 
 app = Flask(__name__)
 
-# ⚠️ Apni latest working cookie yaha dalein
+# JAB BHI 403 ERROR AAYE, APNE BROWSER SE NEW COOKIE NIKAL KAR YAHA PASTE KAREIN
 UTKARSH_COOKIE = "_gcl_au=1.1.2026467561.1780740007; _gid=GA1.2.309059237.1780740008; _ga=GA1.1.2127262317.1780740008; csrf_name=12c2541d50bece75b3b905b484dc446d; ci_session=ub88g7bmr9knopo0o9eeepj0mdrmr6bk; rzp_unified_session_id=SyKWYYGsBUTCpI"
 
 def process_ws_file(url, name):
-    """Core function jo .ws file ko download karke A4 HTML banati hai"""
     html_filename = f"{name}.html"
     
     headers = {
@@ -42,7 +41,7 @@ def process_ws_file(url, name):
         else:
             decompressed_data = raw_data.decode('utf-8', errors='ignore')
 
-    # A4 Layout Template
+    # A4 Layout HTML Template
     html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -75,45 +74,44 @@ def process_ws_file(url, name):
     return html_filename
 
 
-# --- API ENDPOINTS ---
+@app.route('/')
+def home():
+    # Yeh check karne ke liye ki API up hai ya nahi
+    return jsonify({"status": "running", "message": "API ekdum mast chal rahi hai!"})
+
 
 @app.route('/convert', methods=['GET', 'POST'])
 def convert_api():
-    # GET aur POST dono tareeqon se parameters accept karega
-    if request.method == 'POST':
-        # Agar JSON data bheja jaye
-        data = request.get_json(silent=True) or request.form
-        url = data.get('url')
-        name = data.get('name', 'utkarsh_notes')
-    else:
-        # Agar URL query parameters ho (?url=...&name=...)
-        url = request.args.get('url')
-        name = request.args.get('name', 'utkarsh_notes')
-
-    if not url:
-        return jsonify({"status": "error", "message": "Missing 'url' parameter"}), 400
-
     try:
-        # File process karke save karna
+        if request.method == 'POST':
+            data = request.get_json(silent=True) or request.form
+            url = data.get('url')
+            name = data.get('name', 'utkarsh_notes')
+        else:
+            url = request.args.get('url')
+            name = request.args.get('name', 'utkarsh_notes')
+
+        if not url:
+            return jsonify({"status": "error", "message": "URL parameter missing hai bhai!"}), 400
+
         generated_file = process_ws_file(url, name)
         
-        # File download response bhejna aur download hone ke baad server se delete karna
-        response = send_file(generated_file, as_attachment=True, download_name=generated_file)
-        
-        @response.call_on_close
-        def cleanup():
-            if os.path.exists(generated_file):
-                os.remove(generated_file)
-                
-        return response
+        # File response bhejna
+        return send_file(generated_file, as_attachment=True, download_name=generated_file)
 
     except urllib.error.HTTPError as e:
-        return jsonify({"status": "error", "message": f"S3 Forbidden ({e.code}). Update Cookie."}), 403
+        return jsonify({
+            "status": "error", 
+            "error_code": e.code,
+            "message": "Utkarsh S3 ne block kiya (403 Forbidden). UTKARSH_COOKIE badalna padega."
+        }), 403
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        # Yeh line kisi bhi internal error ko json me dikha degi (Page crash nahi hoga)
+        return jsonify({"status": "error", "message": f"Internal Error: {str(e)}"}), 500
 
 
 if __name__ == '__main__':
-    # Termux ya local network me run karne ke liye port 5000 standard hai
-    app.run(host='0.0.0.0', port=1000, debug=True)
+    # Yeh local testing ke liye hai, Render ise use nahi karega agar gunicorn on hai
+    port = int(os.environ.get("PORT", 1000))
+    app.run(host='0.0.0.0', port=port)
     
