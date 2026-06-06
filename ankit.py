@@ -287,7 +287,7 @@ async def get_signed_m3u8_url(access_token: str, url: str):
 
     if signed_params:
         # Clean the original URL first
-        clean_url = clean_video_url(video_url)
+        clean_url = clean_video_url(url)
         
         # If clean URL already has query params, remove everything after ?
         if '?' in clean_url:
