@@ -1,15 +1,16 @@
 import os
 import gzip
-import requests
+import urllib.request
+import urllib.error
 
 def download_html(url, name):
     """
-    Utkarsh .ws file ko exact network headers ke sath download karke
-    print-ready A4 HTML file me convert karti hai.
+    Urllib client ka use karke strict Cloudflare/S3 bypass 
+    aur print-ready A4 HTML generation.
     """
     html_filename = f"{name}.html"
     
-    # Aapke screenshots se nikale gaye exact headers
+    # Raw headers setup jo strictly regular browser traffic mirror karega
     headers = {
         "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36",
         "Accept": "*/*",
@@ -17,33 +18,38 @@ def download_html(url, name):
         "Accept-Language": "en-US,en;q=0.9",
         "Cache-Control": "no-cache",
         "Pragma": "no-cache",
-        "Host": "online.utkarsh.com",
         "Origin": "https://online.utkarsh.com",
-        "Referer": "https://apps-s3-prod.utkarshapp.com/",
+        "Referer": "https://online.utkarsh.com/",
         "Sec-Ch-Ua": '"Chromium";v="139", "Not;A=Brand";v="99"',
         "Sec-Ch-Ua-Mobile": "?1",
         "Sec-Ch-Ua-Platform": '"Android"',
-        "Sec-Fetch-Dest": "font",
+        "Sec-Fetch-Dest": "empty",
         "Sec-Fetch-Mode": "cors",
         "Sec-Fetch-Site": "cross-site",
         "Connection": "keep-alive"
     }
     
-    # 1. File download karna exact headers ke sath
-    response = requests.get(url, headers=headers, timeout=30)
-    response.raise_for_status()
-    raw_data = response.content
-
-    # 2. Gzip Decompression logic
     try:
-        if raw_data.startswith(b'\x1f\x8b'):
-            decompressed_data = gzip.decompress(raw_data).decode('utf-8', errors='ignore')
-        else:
-            decompressed_data = raw_data.decode('utf-8', errors='ignore')
-    except Exception:
-        decompressed_data = raw_data.decode('utf-8', errors='ignore')
+        # Request module ka use bina kisi Python automation metadata ke
+        req = urllib.request.Request(url, headers=headers)
+        
+        with urllib.request.urlopen(req, timeout=30) as response:
+            raw_data = response.read()
+            
+            # Check for GZIP encoding automatically via header content or byte format
+            content_encoding = response.info().get('Content-Encoding')
+            if content_encoding == 'gzip' or raw_data.startswith(b'\x1f\x8b'):
+                decompressed_data = gzip.decompress(raw_data).decode('utf-8', errors='ignore')
+            else:
+                decompressed_data = raw_data.decode('utf-8', errors='ignore')
 
-    # 3. Print-Ready A4 HTML Layout template
+    except urllib.error.HTTPError as e:
+        # Fallback agar unka secure edge standard fetch blocks check kare
+        raise Exception(f"S3 Security Blocked (HTTP {e.code}): Headers/Token change required.")
+    except Exception as e:
+        raise Exception(f"Download Error: {str(e)}")
+
+    # Print-Ready A4 HTML Layout template
     html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -99,7 +105,7 @@ def download_html(url, name):
 </body>
 </html>"""
 
-    # 4. HTML file local storage me save karna
+    # HTML file local storage me save karna
     with open(html_filename, "w", encoding="utf-8") as f:
         f.write(html_content)
         
