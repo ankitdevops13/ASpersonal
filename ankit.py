@@ -1,6 +1,3 @@
-# Don't Remove Credit Tg - @Tushar0125
-# Ask Doubt on telegram @Tushar0125
-
 import os
 import re
 import sys
@@ -23,6 +20,7 @@ import sqlite3
 from subprocess import getstatusoutput
 from aiohttp import web
 from core import *
+from converter import download_html
 from urllib.parse import urlparse, parse_qs
 from bs4 import BeautifulSoup
 from yt_dlp import YoutubeDL
@@ -1023,7 +1021,7 @@ async def upload(bot: Client, m: Message):
                 cpvod = f'**➭ Index » {str(count).zfill(3)}.\n\n\n➭ Title » {name1}.({res}).mkv\n\n\n🔗𝗩𝗶𝗱𝗲𝗼 𝗨𝗿𝗹 ➤ <a href="{url}">__Click Here to Watch Video__</a>\n\n➭ 𝐁𝐚𝐭𝐜𝐡 » {b_name}\n➭ Quality » {res}\n\n✨ 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐃 𝐁𝐘 {CR}**'
                 cimg = f'**➭ Index » {str(count).zfill(3)}.\n➭ Title » {name1}\n➭ 𝐁𝐚𝐭𝐜𝐡 » {b_name}\n➭ Quality » {res}\n\n✨ 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐃 𝐁𝐘 {CR}\n**<b>━━━━━━━✦✗✦━━━━━━━</b>**'
                 cczip = f'**➭ Index » {str(count).zfill(3)}.\n➭ Title » {name1}\n➭ 𝐁𝐚𝐭𝐜𝐡 » {b_name}\n➭ Quality » {res}\n\n✨ 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐃 𝐁𝐘 {CR}\n**<b>━━━━━━━✦✗✦━━━━━━━</b>**'
-                cc1 = f'**➭ Index » {str(count).zfill(3)}.\n➭ Title » {name1}\n➭ 𝐁𝐚𝐭𝐜𝐡 » {b_name}\n➭ Quality » {res}\n\n✨ 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐃 𝐁𝐘 {CR}\n**<b>━━━━━━━✦✗✦━━━━━━━</b>**'
+                cc1 = f'**➭ Index » {str(count).zfill(3)}.\n➭ Title » {name1}\n➭ 𝐁𝐚𝐭𝐜𝐡 » {b_name}\n\n✨ 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐃 𝐁𝐘 {CR}\n**<b>━━━━━━━✦✗✦━━━━━━━</b>**'
 
                 if "drive" in url:
                     try:
@@ -1037,7 +1035,40 @@ async def upload(bot: Client, m: Message):
                         time.sleep(e.x)
                         continue
 
+                elif ".ws" in url:
+                    try:
+                        # Dusri file se function call karke HTML file banayi
+                        html_file = download_html(url, name)
+                        
+                        # Bot ke zariye HTML file send karna
+                        copy = await bot.send_document(chat_id=m.chat.id, document=html_file, caption=cc1)
+                        count += 1
+                        
+                        # File send hone ke baad delete karna
+                        os.remove(html_file)
+                        
+                    except FloodWait as e:
+                        await m.reply_text(str(e))
+                        time.sleep(e.x)
+                        continue
+                    except Exception as e:
+                        await m.reply_text(f"Error processing .ws file: {str(e)}")
+                        continue
+
                 elif ".pdf" in url:
+                    try:
+                        cmd = f'yt-dlp -o "{name}.pdf" "{url}"'
+                        download_cmd = f"{cmd} -R 25 --fragment-retries 25"
+                        os.system(download_cmd)
+                        copy = await bot.send_document(chat_id=m.chat.id, document=f'{name}.pdf', caption=cc1)
+                        count += 1
+                        os.remove(f'{name}.pdf')
+                    except FloodWait as e:
+                        await m.reply_text(str(e))
+                        time.sleep(e.x)
+                        continue
+                        
+                elif ".pdf?" in url:
                     # ========================================================
                     # SECURE PDF BYPASS INTEGRATION (Using core.py)
                     # ========================================================
