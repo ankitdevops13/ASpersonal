@@ -207,6 +207,105 @@ def pw_player(url):
 
 
 
+async def get_signed_video_url(access_token: str, parent_id: str, child_id: str):
+    if not access_token.startswith("Bearer "):
+        access_token = f"Bearer {access_token}"
+
+    headers = {
+        'Host': 'api.penpencil.co',
+        'Authorization': access_token,
+        'Client-Id': '5eb393ee95fab7468a79d189',
+        'Client-Type': 'WEB',
+        'Client-Version': '200',
+        'Randomid': '8ffa361e-4cc7-4948-89e8-72e552ac5460',
+        'Devicetype': 'mobile',
+        'Networktype': '3g',
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36',
+        'Accept': '*/*',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Origin': 'https://www.pw.live',
+        'Referer': 'https://www.pw.live/',
+        'X-Sdk-Version': '0.0.20'
+    }
+
+    signing_url = (
+        f"https://api.penpencil.co/v1/videos/video-url-details"
+        f"?type=BATCHES&videoContainerType=DASH&reqType=query"
+        f"&childId={child_id}&parentId={parent_id}&clientVersion=201"
+    )
+
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(signing_url, headers=headers) as response:
+                if response.status == 200:
+                    res_json = await response.json()
+                    data_obj = res_json.get("data", {})
+
+                    signed_url = data_obj.get("link") or data_obj.get("videoUrl") or data_obj.get("signedUrl")
+
+                    if signed_url:
+                        if signed_url.startswith("?"):
+                            return signed_url
+                        return signed_url
+                    else:
+                        return None
+                else:
+                    return None
+        except Exception:
+            return None
+
+def extract_ids_from_url(url: str):
+    """Extract parentId and childId from URL"""
+    parent_id = None
+    child_id = None
+    
+    parent_match = re.search(r'parentId=([a-f0-9]+)', url)
+    if parent_match:
+        parent_id = parent_match.group(1)
+    
+    child_match = re.search(r'childId=([a-f0-9]+)', url)
+    if child_match:
+        child_id = child_match.group(1)
+    
+    return parent_id, child_id
+
+def clean_video_url(url: str):
+    id =  url.split("/")[-2]
+    url =  "https://sec-prod-mediacdn.pw.live/" + id + "/master.m3u8"
+
+async def get_signed_m3u8_url(access_token: str, url: str):
+    
+    # Extract IDs from URL
+    parent_id, child_id = extract_ids_from_url(url)
+    
+    if not parent_id or not child_id:
+        return None
+
+    # Get signed URL parameters from API
+    signed_params = await get_signed_video_url(access_token, parent_id, child_id)
+
+    if signed_params:
+        # Clean the original URL first
+        clean_url = clean_video_url(video_url)
+        
+        # If clean URL already has query params, remove everything after ?
+        if '?' in clean_url:
+            base_url = clean_url.split('?')[0]
+        else:
+            base_url = clean_url
+        
+        # Combine base URL with signed params
+        if signed_params.startswith("?"):
+            final_url = base_url + signed_params
+        else:
+            final_url = signed_params
+        
+        return final_url
+    else:
+        return None
+
+
 bot = Client(
     "bot",
     api_id=API_ID,
@@ -864,6 +963,14 @@ async def upload(bot: Client, m: Message):
              wake_player()
              url = pw_player(url)
              print("PW Player URL:", url)
+
+            if '/master.mpd' in url:
+                access_token = raw_text4
+                result = await get_signed_m3u8_url(access_token, url)
+                if result:
+                    return f"✅ Succes {result}"
+
+                return "❌ failed to get signed url"
                 
             if 'content.allen.in' in url:
              url = convert_url(url, 'dash')
