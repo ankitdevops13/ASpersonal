@@ -1068,7 +1068,7 @@ async def upload(bot: Client, m: Message):
                         time.sleep(e.x)
                         continue
                         
-                elif ".pdf?" in url:
+                elif ".pdf?" in url or "apps-s3-prod.utkarshapp.com/admin_v1/file_manager/pdf" in url:
                     # ========================================================
                     # SECURE PDF BYPASS INTEGRATION (Using core.py)
                     # ========================================================
