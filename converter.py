@@ -2,7 +2,7 @@ import os
 import gzip
 import requests
 
-def download_ws_as_html(url, name):
+def download_html(url, name):
     """
     Utkarsh .ws file ko exact network headers ke sath download karke
     print-ready A4 HTML file me convert karti hai.
