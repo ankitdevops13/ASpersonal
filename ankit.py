@@ -837,9 +837,9 @@ async def upload(bot: Client, m: Message):
     raw_text4 = input4.text
     await input4.delete(True)
     if raw_text4 == '3':
-        MR = "token"
+        access_token = "token"
     else:
-        MR = raw_text4
+        access_token = raw_text4
 
 
 
@@ -911,7 +911,7 @@ async def upload(bot: Client, m: Message):
                 
                 headers = {
                     'host': 'api.classplusapp.com',
-                    'x-access-token': raw_text4,    
+                    'x-access-token': access_token,    
                     'accept-language': 'EN',
                     'api-version': '18',
                     'app-version': '1.4.73.2',
@@ -965,15 +965,13 @@ async def upload(bot: Client, m: Message):
              print("PW Player URL:", url)
 
             if '/master.mpd' in url:
-                access_token = raw_text4
                 url = await get_signed_m3u8_url(access_token, url)
                 wake_player()
                 url = pw_player(url)
                 if url:
-                    return f"✅ Succes {url}"
-
-                return "❌ failed to get signed url"
-
+                    return f"✅ Success {url}"
+                return "❌ Failed to get signed url"
+                
             
             if 'content.allen.in' in url:
              url = convert_url(url, 'dash')
