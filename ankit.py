@@ -163,7 +163,7 @@ def convert_url(url, format_type='dash'):  # Default ab DASH
     )
 
 
-import re
+
 
 def extract_id(url):
     patterns = [
@@ -303,6 +303,58 @@ async def get_signed_m3u8_url(access_token: str, url: str):
     else:
         return None
 
+async def download2pdf(url, name):
+    clean_name = f"{name}.pdf" if not name.endswith(".pdf") else name
+    print(f"[Secure PDF] Download suru ho raha hai: {clean_name}", flush=True)
+    
+    # ⚠️ Pichle step me jo cookie nikali thi, use yaha dalein.
+    # Akamai bina browser cookie ke download nahi karne dega.
+    UTKARSH_COOKIE = "_gcl_au=1.1.2026467561.1780740007; _gid=GA1.2.309059237.1780740008; _ga=GA1.1.2127262317.1780740008; csrf_name=12c2541d50bece75b3b905b484dc446d; ci_session=ub88g7bmr9knopo0o9eeepj0mdrmr6bk; rzp_unified_session_id=SyKWYYGsBUTCpI"
+    
+    # Akamai / AppX bypass karne ke liye complete header bundle
+    cmd = [
+        "curl", "-L",
+        "-A", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36",
+        "-H", "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+        "-H", "Accept-Language: en-US,en;q=0.9",
+        "-H", f"Cookie: {UTKARSH_COOKIE}", # <--- Cookie check bypass
+        "-H", "Origin: https://online.utkarsh.com",
+        "-H", "Referer: https://online.utkarsh.com/",
+        "-H", "Sec-Fetch-Dest: document",
+        "-H", "Sec-Fetch-Mode: navigate",
+        "-H", "Sec-Fetch-Site: cross-site",
+        "--compressed",
+        "-o", clean_name,
+        url
+    ]
+    
+    try:
+        process = await asyncio.create_subprocess_exec(
+            *cmd, 
+            stdout=asyncio.subprocess.PIPE, 
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await process.communicate()
+        
+        if process.returncode == 0 and os.path.exists(clean_name):
+            # Safe Check: Yeh dekhne ke liye ki kahi HTML error page to download nahi ho gaya
+            with open(clean_name, "rb") as f:
+                header_bytes = f.read(4)
+                # Proper PDF file hamesha '%PDF' string se shuru hoti hai
+                if header_bytes != b"%PDF":
+                    print("[Secure PDF] Warning: File download hui par wo real PDF nahi hai (Server ne error text bheja hai).", flush=True)
+                    # Debug karne ke liye aap dekh sakte hain ki andar kya content aaya
+                    return None
+            
+            print(f"[Secure PDF] Download safal raha: {clean_name}", flush=True)
+            return clean_name
+        else:
+            print("[Secure PDF] Error: Curl download process fail ho gaya.", flush=True)
+            return None
+    except Exception as e:
+        print(f"[Secure PDF] Exception error: {str(e)}", flush=True)
+        return None
+        
 
 bot = Client(
     "bot",
@@ -1055,7 +1107,36 @@ async def upload(bot: Client, m: Message):
                         await m.reply_text(f"Error processing .ws file: {str(e)}")
                         continue
 
-                
+                elif "PDF.pdf" in url:
+                    # ========================================================
+                    # SECURE PDF BYPASS INTEGRATION (Using core.py)
+                    # ========================================================
+                    try:
+                        await asyncio.sleep(2)
+                        url = url.replace(" ", "%20")
+
+                        # Core.py se download_secure_pdf function ko call kar rahe hain
+                        downloaded_pdf = await helper.download_secure_pdf(url, name)
+
+                        if downloaded_pdf and os.path.exists(downloaded_pdf):
+                            copy = await bot.send_document(
+                                chat_id=m.chat.id, 
+                                document=downloaded_pdf, 
+                                caption=cc1
+                            )
+                            count += 1
+                            os.remove(downloaded_pdf)
+                            print(f"[Bot Success] Successfully uploaded bypassed PDF: {downloaded_pdf}", flush=True)
+                        else:
+                            await m.reply_text(f"❌ Secure PDF download fail ho gaya. Link block ho chuka hai.")
+
+                    except FloodWait as e:
+                        await m.reply_text(str(e))
+                        await asyncio.sleep(e.x)
+                        continue
+                    except Exception as e:
+                        await m.reply_text(f"⚠️ PDF Download Error: {str(e)}")
+                        
                 elif ".pdf?" in url or "apps-s3-prod.utkarshapp.com/admin_v1/file_manager/pdf" in url:
                     # ========================================================
                     # SECURE PDF BYPASS INTEGRATION (Using core.py)
