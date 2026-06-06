@@ -2,24 +2,36 @@ import os
 import gzip
 import requests
 
-def download_html(url, name):
+def download_ws_as_html(url, name):
     """
-    Utkarsh .ws file ko Android Headers ke sath download karke 
+    Utkarsh .ws file ko exact network headers ke sath download karke
     print-ready A4 HTML file me convert karti hai.
     """
     html_filename = f"{name}.html"
     
-    # Android Device ke fake headers taaki 403 Forbidden Error na aaye
+    # Aapke screenshots se nikale gaye exact headers
     headers = {
-        "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36",
         "Accept": "*/*",
         "Accept-Encoding": "gzip, deflate, br",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+        "Host": "online.utkarsh.com",
+        "Origin": "https://online.utkarsh.com",
+        "Referer": "https://apps-s3-prod.utkarshapp.com/",
+        "Sec-Ch-Ua": '"Chromium";v="139", "Not;A=Brand";v="99"',
+        "Sec-Ch-Ua-Mobile": "?1",
+        "Sec-Ch-Ua-Platform": '"Android"',
+        "Sec-Fetch-Dest": "font",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "cross-site",
         "Connection": "keep-alive"
     }
     
-    # 1. File download karna (with headers)
+    # 1. File download karna exact headers ke sath
     response = requests.get(url, headers=headers, timeout=30)
-    response.raise_for_status() # Agar ab bhi koi error aayi to ye catch ho jayegi
+    response.raise_for_status()
     raw_data = response.content
 
     # 2. Gzip Decompression logic
