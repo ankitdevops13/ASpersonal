@@ -1055,19 +1055,7 @@ async def upload(bot: Client, m: Message):
                         await m.reply_text(f"Error processing .ws file: {str(e)}")
                         continue
 
-                elif ".pdf" in url:
-                    try:
-                        cmd = f'yt-dlp -o "{name}.pdf" "{url}"'
-                        download_cmd = f"{cmd} -R 25 --fragment-retries 25"
-                        os.system(download_cmd)
-                        copy = await bot.send_document(chat_id=m.chat.id, document=f'{name}.pdf', caption=cc1)
-                        count += 1
-                        os.remove(f'{name}.pdf')
-                    except FloodWait as e:
-                        await m.reply_text(str(e))
-                        time.sleep(e.x)
-                        continue
-                        
+                
                 elif ".pdf?" in url or "apps-s3-prod.utkarshapp.com/admin_v1/file_manager/pdf" in url:
                     # ========================================================
                     # SECURE PDF BYPASS INTEGRATION (Using core.py)
