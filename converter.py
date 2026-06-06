@@ -4,14 +4,22 @@ import requests
 
 def download_html(url, name):
     """
-    Utkarsh .ws file ko download karke print-ready A4 HTML file me convert karti hai
-    aur bante hi uska file path return karti hai.
+    Utkarsh .ws file ko Android Headers ke sath download karke 
+    print-ready A4 HTML file me convert karti hai.
     """
     html_filename = f"{name}.html"
     
-    # 1. File download karna
-    response = requests.get(url, timeout=30)
-    response.raise_for_status()
+    # Android Device ke fake headers taaki 403 Forbidden Error na aaye
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36",
+        "Accept": "*/*",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive"
+    }
+    
+    # 1. File download karna (with headers)
+    response = requests.get(url, headers=headers, timeout=30)
+    response.raise_for_status() # Agar ab bhi koi error aayi to ye catch ho jayegi
     raw_data = response.content
 
     # 2. Gzip Decompression logic
@@ -84,3 +92,4 @@ def download_html(url, name):
         f.write(html_content)
         
     return html_filename
+    
