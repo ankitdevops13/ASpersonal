@@ -1310,4 +1310,4 @@ async def main():
     await bot.stop()
 
 
-bot.run(main())
+bot.run()
