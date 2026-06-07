@@ -1041,6 +1041,8 @@ async def upload(bot: Client, m: Message):
              wake_player()
              player_url = pw_player2(signed_url)
              print(player_url)
+             await message.reply_text(f"🎬 [Play Video]({player_url})")
+             return
             
             if 'content.allen.in' in url:
              url = convert_url(url, 'dash')
