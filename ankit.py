@@ -1042,6 +1042,11 @@ async def upload(bot: Client, m: Message):
                 player = pw_player2(url)
                 wake_player()
                 print("PW Player URL:", player)
+                
+
+            name1 = links[i][0].replace("\t", "").replace(":", "").replace("/", "").replace("+", "").replace("#", "").replace("|", "").replace("@", "").replace("*", "").replace(".", "").replace("https", "").replace("http", "").strip()
+            name = f'{str(count).zfill(3)}) {name1[:60]}'
+            
 
             elif "pw.live" in url or "sec-prod-mediacdn" in url:
                 wake_player()
