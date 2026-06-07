@@ -1030,62 +1030,48 @@ async def upload(bot: Client, m: Message):
             else:
                 print("Invalid Link")  
 
-            if "pw.live" in url or "sec-prod-mediacdn" in url:
-             wake_player()
-             url = pw_player(url)
-             print("PW Player URL:", url)
-
+                        # 1. PEHLE URL KO SIGNED/AUTHENTICATED URL ME BADLEIN
             if '/master.mpd' in url or "d1d34p8vz63oiq.cloudfront.net" in url or "parentId=" in url or "childId=" in url:
-             signed_url = await get_signed_m3u8_url(access_token, url)
-             if signed_url:
-                 url = signed_url
-                 
-             wake_player()      
-             player = pw_player2(signed_url)
-             print("SIGNED:", signed_url)
-             print(player)
-             
+                signed_url = await get_signed_m3u8_url(access_token, url)
+                if signed_url:
+                    url = signed_url  # URL yahan overwrite ho gaya
+                    print("URL successfully updated to SIGNED:", url)
+                else:
+                    print("WARNING: get_signed_m3u8_url returned None!")
+                
+                player = pw_player2(url)
+                wake_player()
+                print("PW Player URL:", player)
+
+            elif "pw.live" in url or "sec-prod-mediacdn" in url:
+                wake_player()
+                url = pw_player(url)
+                print("PW Player URL:", url)
             
-            if 'content.allen.in' in url:
-             url = convert_url(url, 'dash')
-             fallback_url = convert_url(url, 'm3u8')
-            
-             print("First Change Url:", url)
-             print("Fallback Change url:", fallback_url)
+            elif 'content.allen.in' in url:
+                url = convert_url(url, 'dash')
+                fallback_url = convert_url(url, 'm3u8')
+                print("First Change Url:", url)
+                print("Fallback Change url:", fallback_url)
                 
             
-
-            name1 = links[i][0].replace("\t", "").replace(":", "").replace("/", "").replace("+", "").replace("#", "").replace("|", "").replace("@", "").replace("*", "").replace(".", "").replace("https", "").replace("http", "").strip()
-            name = f'{str(count).zfill(3)}) {name1[:60]}'
-
-
-            if 'khansirvod4.pc.cdn.bitgravity.com' in url:
-               parts = url.split('/')
-               part3 = parts[3]
-               part4 = parts[4]
-               part5 = parts[5]
-               url = f"https://kgs-v4.akamaized.net/kgs-cv/{part3}/{part4}/{part5}"
-
             if "youtu" in url:
                 ytf = f"b[height<={raw_text2}][ext=mp4]/bv[height<={raw_text2}][ext=mp4]+ba[ext=m4a]/b[ext=mp4]"
             else:
                 ytf = f"b[height<={raw_text2}]/bv[height<={raw_text2}]+ba/b/bv+ba"
 
-            if "edge.api.brightcove.com" in url:
-                bcov = 'bcov_auth=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpYXQiOjE3MzUxMzUzNjIsImNvbiI6eyJpc0FkbWluIjpmYWxzZSwiYXVzZXIiOiJVMFZ6TkdGU2NuQlZjR3h5TkZwV09FYzBURGxOZHowOSIsImlkIjoiYmt3cmVIWmxZMFUwVXpkSmJYUkxVemw2ZW5Oclp6MDkiLCJmaXJzdF9uYW1lIjoiY25GdVpVdG5kRzR4U25sWVNGTjRiVW94VFhaUVVUMDkiLCJlbWFpbCI6ImFFWllPRXhKYVc1NWQyTlFTazk0YmtWWWJISTNRM3BKZW1OUVdIWXJWWE0wWldFNVIzZFNLelE0ZHowPSIsInBob25lIjoiZFhSNlFrSm9XVlpCYkN0clRUWTFOR3REU3pKTVVUMDkiLCJhdmF0YXIiOiJLM1ZzY1M4elMwcDBRbmxrYms4M1JEbHZla05pVVQwOSIsInJlZmVycmFsX2NvZGUiOiJhVVZGZGpBMk9XSnhlbXRZWm14amF6TTBVazQxUVQwOSIsImRldmljZV90eXBlIjoid2ViIiwiZGV2aWNlX3ZlcnNpb24iOiJDaHJvbWUrMTE5IiwiZGV2aWNlX21vZGVsIjoiY2hyb21lIiwicmVtb3RlX2FkZHIiOiIyNDA5OjQwYzI6MjA1NTo5MGQ0OjYzYmM6YTNjOTozMzBiOmIxOTkifX0.Kifitj1wCe_ohkdclvUt7WGuVBsQFiz7eeXoF1RduDJi4X7egejZlLZ0GCZmEKBwQpMJLvrdbAFIRniZoeAxL4FZ-pqIoYhH3PgZU6gWzKz5pdOCWfifnIzT5b3rzhDuG7sstfNiuNk9f-HMBievswEIPUC_ElazXdZPPt1gQqP7TmVg2Hjj6-JBcG7YPSqa6CUoXNDHpjWxK_KREnjWLM7vQ6J3vF1b7z_S3_CFti167C6UK5qb_turLnOUQzWzcwEaPGB3WXO0DAri6651WF33vzuzeclrcaQcMjum8n7VQ0Cl3fqypjaWD30btHQsu5j8j3pySWUlbyPVDOk-g'
-                url = url.split("bcov_auth")[0]+bcov
+            
 
             if "jw-prod" in url:
                 cmd = f'yt-dlp -o "{name}.mp4" "{url}"'
-
             elif "webvideos.classplusapp." in url:
-               cmd = f'yt-dlp --add-header "referer:https://web.classplusapp.com/" --add-header "x-cdn-tag:empty" -f "{ytf}" "{url}" -o "{name}.mp4"'
-
+                cmd = f'yt-dlp --add-header "referer:https://web.classplusapp.com/" --add-header "x-cdn-tag:empty" -f "{ytf}" "{url}" -o "{name}.mp4"'
             elif "youtube.com" in url or "youtu.be" in url:
                 cmd = f'yt-dlp --cookies youtube_cookies.txt -f "{ytf}" "{url}" -o "{name}".mp4'
-
             else:
+                
                 cmd = f'yt-dlp -f "{ytf}" "{url}" -o "{name}.mp4"'
+            
 
             try:
                 cc = f'**➭ Index » {str(count).zfill(3)}.\n➭ Title » {name1}\n➭ 𝐁𝐚𝐭𝐜𝐡 » {b_name}\n➭ Quality » {res}\n\n✨ 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐃 𝐁𝐘 {CR}\n**<b>━━━━━━━✦✗✦━━━━━━━</b>**'
