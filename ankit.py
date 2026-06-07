@@ -974,7 +974,7 @@ async def upload(bot: Client, m: Message):
 
 
             
-            elif 'contentId' in url or 'master.m3u8&contentHashIdl=' in url:
+            elif 'contentId' in url or 'contentHashIdl=' in url:
                 url = unquote(url)
                 content = extract_id(url)
                 
@@ -1027,8 +1027,7 @@ async def upload(bot: Client, m: Message):
                         
                 except Exception as e:
                     print(f"Request Error: {e}")
-            else:
-                print("Invalid Link")  
+            
 
                         # 1. PEHLE URL KO SIGNED/AUTHENTICATED URL ME BADLEIN
             if '/master.mpd' in url or "d1d34p8vz63oiq.cloudfront.net" in url or "parentId=" in url or "childId=" in url:
