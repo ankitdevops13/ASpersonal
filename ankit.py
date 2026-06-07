@@ -299,9 +299,11 @@ async def get_signed_m3u8_url(access_token: str, url: str):
     return signed_data
 
 
-def pw_player2(url: str):
-    return PLAYER_BASE + urllib.parse.quote(url, safe="")
+def pw_player2(url):
+    if not url:
+        return None
 
+    return PLAYER_BASE + urllib.parse.quote(str(url), safe="")
 
 # Example
 # signed_url = await get_signed_m3u8_url(token, lesson_url)
@@ -1121,6 +1123,7 @@ async def upload(bot: Client, m: Message):
             if '/master.mpd' in url:
              signed_url = await get_signed_m3u8_url(access_token, url)
              player_url = pw_player2(signed_url)
+             print("SIGNED:", signed_url, type(signed_url))
              print(player_url)
             
             if 'content.allen.in' in url:
