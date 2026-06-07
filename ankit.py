@@ -190,61 +190,6 @@ def pw_player(url):
 
 
 
-async def get_signed_video_url(access_token: str, parent_id: str, child_id: str):
-    if not access_token.startswith("Bearer "):
-        access_token = f"Bearer {access_token}"
-
-    headers = {
-        "Authorization": access_token,
-        "Client-Id": "5eb393ee95fab7468a79d189",
-        "Client-Type": "WEB",
-        "Client-Version": "200",
-        "Randomid": "8ffa361e-4cc7-4948-89e8-72e552ac5460",
-        "Devicetype": "mobile",
-        "Networktype": "3g",
-        "User-Agent": (
-            "Mozilla/5.0 (Linux; Android 10; K) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/139.0.0.0 Mobile Safari/537.36"
-        ),
-        "Accept": "*/*",
-        "Origin": "https://www.pw.live",
-        "Referer": "https://www.pw.live/",
-        "X-Sdk-Version": "0.0.20",
-    }
-
-    api_url = (
-        "https://api.penpencil.co/v1/videos/video-url-details"
-        f"?type=BATCHES"
-        f"&videoContainerType=DASH"
-        f"&reqType=query"
-        f"&childId={child_id}"
-        f"&parentId={parent_id}"
-        f"&clientVersion=201"
-    )
-
-    async with aiohttp.ClientSession() as session:
-        try:
-            async with session.get(api_url, headers=headers) as resp:
-
-                if resp.status != 200:
-                    return None
-
-                data = await resp.json()
-
-                if not data:
-                    return None
-
-                data_obj = data.get("data", {})
-
-                return (
-                    data_obj.get("link")
-                    or data_obj.get("signedUrl")
-                    or data_obj.get("videoUrl")
-                )
-
-        except Exception:
-            return None
 
 import re
 def extract_ids_from_url(url: str):
@@ -272,35 +217,6 @@ def clean_video_url(url):
     return f"https://sec-prod-mediacdn.pw.live/{video_id}/master.m3u8"
 
 
-async def get_signed_m3u8_url2(access_token: str, url: str):
-
-    parent_id, child_id = extract_ids_from_url(url)
-
-    if not parent_id or not child_id:
-        return None
-
-    signed_data = await get_signed_video_url(
-        access_token,
-        parent_id,
-        child_id
-    )
-
-    if not signed_data:
-        return None
-
-    # API already returned full URL
-    if signed_data.startswith("http"):
-        return signed_data
-
-    base_url = clean_video_url(url)
-
-    if not base_url:
-        return None
-
-    if signed_data.startswith("?"):
-        return base_url + signed_data
-
-    return signed_data
 
 
 def pw_player2(url):
@@ -308,11 +224,6 @@ def pw_player2(url):
         return None
 
     return PLAYER_BASE + urllib.parse.quote(str(url), safe="")
-
-# Example
-# signed_url = await get_signed_m3u8_url(token, lesson_url)
-# player_url = pw_player(signed_url)
-# print(player_url)
 
 async def get_signed_video_url(access_token: str, parent_id: str, child_id: str):
     if not access_token.startswith("Bearer "):
@@ -384,7 +295,7 @@ def clean_video_url2(url: str):
 async def get_signed_m3u8_url(access_token: str, url: str):
     
     # Extract IDs from URL
-    parent_id, child_id = extract_ids_from_url(url)
+    parent_id, child_id = extract_ids_from_url2(url)
     
     if not parent_id or not child_id:
         return None
