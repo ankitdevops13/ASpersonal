@@ -1037,8 +1037,9 @@ async def upload(bot: Client, m: Message):
 
             if '/master.mpd' in url or "d1d34p8vz63oiq.cloudfront.net" in url or "parentId=" in url or "childId=" in url:
              signed_url = await get_signed_m3u8_url(access_token, url)
-             player_url = pw_player2(signed_url)
              print("SIGNED:", signed_url, type(signed_url))
+             wake_player()
+             player_url = pw_player2(signed_url)
              print(player_url)
             
             if 'content.allen.in' in url:
