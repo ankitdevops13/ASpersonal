@@ -1044,8 +1044,6 @@ async def upload(bot: Client, m: Message):
                 print("PW Player URL:", player)
                 
 
-            name1 = links[i][0].replace("\t", "").replace(":", "").replace("/", "").replace("+", "").replace("#", "").replace("|", "").replace("@", "").replace("*", "").replace(".", "").replace("https", "").replace("http", "").strip()
-            name = f'{str(count).zfill(3)}) {name1[:60]}'
             
 
             elif "pw.live" in url or "sec-prod-mediacdn" in url:
@@ -1059,6 +1057,9 @@ async def upload(bot: Client, m: Message):
                 print("First Change Url:", url)
                 print("Fallback Change url:", fallback_url)
                 
+
+            name1 = links[i][0].replace("\t", "").replace(":", "").replace("/", "").replace("+", "").replace("#", "").replace("|", "").replace("@", "").replace("*", "").replace(".", "").replace("https", "").replace("http", "").strip()
+            name = f'{str(count).zfill(3)}) {name1[:60]}'
             
             if "youtu" in url:
                 ytf = f"b[height<={raw_text2}][ext=mp4]/bv[height<={raw_text2}][ext=mp4]+ba[ext=m4a]/b[ext=mp4]"
