@@ -1039,10 +1039,9 @@ async def upload(bot: Client, m: Message):
              signed_url = await get_signed_m3u8_url(access_token, url)
              print("SIGNED:", signed_url, type(signed_url))
              wake_player()
-             player_url = pw_player2(signed_url)
-             print(player_url)
-             await message.reply_text(f"🎬 [Play Video]({player_url})")
-             return
+             url = pw_player2(signed_url)
+             print(url)
+             
             
             if 'content.allen.in' in url:
              url = convert_url(url, 'dash')
