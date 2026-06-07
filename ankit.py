@@ -248,24 +248,24 @@ async def get_signed_video_url(access_token: str, parent_id: str, child_id: str)
 
 
 def extract_ids_from_url(url: str):
-    try:
-        query = parse_qs(urlparse(url).query)
+    """Extract parentId and childId from URL"""
+    parent_id = None
+    child_id = None
+    
+    parent_match = re.search(r'parentId=([a-f0-9]+)', url)
+    if parent_match:
+        parent_id = parent_match.group(1)
+    
+    child_match = re.search(r'childId=([a-f0-9]+)', url)
+    if child_match:
+        child_id = child_match.group(1)
+    
+    return parent_id, child_id
 
-        parent_id = query.get("parentId", [None])[0]
-        child_id = query.get("childId", [None])[0]
-
-        return parent_id, child_id
-
-    except Exception:
-        return None, None
-
-
-def clean_video_url(url: str):
-    try:
-        video_id = url.rstrip("/").split("/")[-2]
-        return f"https://sec-prod-mediacdn.pw.live/{video_id}/master.m3u8"
-    except Exception:
-        return None
+def clean_video_url(url):
+    path = urlparse(url).path
+    video_id = path.split("/")[-2]
+    return f"https://sec-prod-mediacdn.pw.live/{video_id}/master.m3u8"
 
 
 async def get_signed_m3u8_url(access_token: str, url: str):
@@ -377,7 +377,7 @@ def clean_video_url2(url: str):
     id =  url.split("/")[-2]
     url =  "https://sec-prod-mediacdn.pw.live/" + id + "/master.m3u8"
 
-async def get_signed_m3u8_url2(access_token: str, url: str):
+async def get_signed_m3u8_url(access_token: str, url: str):
     
     # Extract IDs from URL
     parent_id, child_id = extract_ids_from_url(url)
