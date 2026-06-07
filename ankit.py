@@ -248,27 +248,31 @@ async def get_signed_video_url(access_token: str, parent_id: str, child_id: str)
 
 import re
 def extract_ids_from_url(url: str):
-    """Extract parentId and childId from URL"""
     parent_id = None
     child_id = None
     
     parent_match = re.search(r'parentId=([a-f0-9]+)', url)
     if parent_match:
         parent_id = parent_match.group(1)
+        print(f"Found parentId: {parent_id}")
     
     child_match = re.search(r'childId=([a-f0-9]+)', url)
     if child_match:
         child_id = child_match.group(1)
+        print(f"Found childId: {child_id}")
+    
+    if not parent_id or not child_id:
+        print("Failed to extract IDs from URL")
     
     return parent_id, child_id
-
+    
 def clean_video_url(url):
     path = urlparse(url).path
     video_id = path.split("/")[-2]
     return f"https://sec-prod-mediacdn.pw.live/{video_id}/master.m3u8"
 
 
-async def get_signed_m3u8_url(access_token: str, url: str):
+async def get_signed_m3u8_url2(access_token: str, url: str):
 
     parent_id, child_id = extract_ids_from_url(url)
 
@@ -310,7 +314,7 @@ def pw_player2(url):
 # player_url = pw_player(signed_url)
 # print(player_url)
 
-async def get_signed_video_url2(access_token: str, parent_id: str, child_id: str):
+async def get_signed_video_url(access_token: str, parent_id: str, child_id: str):
     if not access_token.startswith("Bearer "):
         access_token = f"Bearer {access_token}"
 
@@ -374,8 +378,8 @@ def extract_ids_from_url2(url: str):
     return parent_id, child_id
 
 def clean_video_url2(url: str):
-    id =  url.split("/")[-2]
-    url =  "https://sec-prod-mediacdn.pw.live/" + id + "/master.m3u8"
+    id_vid =  url.split("/")[-2]
+    url =  "https://sec-prod-mediacdn.pw.live/{id_vid}/master.m3u8"
 
 async def get_signed_m3u8_url(access_token: str, url: str):
     
@@ -386,11 +390,11 @@ async def get_signed_m3u8_url(access_token: str, url: str):
         return None
 
     # Get signed URL parameters from API
-    signed_params = await get_signed_video_url2(access_token, parent_id, child_id)
+    signed_params = await get_signed_video_url(access_token, parent_id, child_id)
 
     if signed_params:
         # Clean the original URL first
-        clean_url = clean_video_url2(url)
+        clean_url = clean_video_url(url)
         
         # If clean URL already has query params, remove everything after ?
         if '?' in clean_url:
