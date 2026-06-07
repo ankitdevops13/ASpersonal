@@ -1133,10 +1133,7 @@ async def upload(bot: Client, m: Message):
              print("First Change Url:", url)
              print("Fallback Change url:", fallback_url)
                 
-            if "/master.mpd" in url or "d1d34p8vz63oiq" in url or "sec1.pw.live" in url:
-             id =  url.split("/")[-2]
-             url = f"https://anonymouspwplayerr-3cfbfedeb317.herokuapp.com/pw?url={url}&token={raw_text4}"
-
+            
 
             name1 = links[i][0].replace("\t", "").replace(":", "").replace("/", "").replace("+", "").replace("#", "").replace("|", "").replace("@", "").replace("*", "").replace(".", "").replace("https", "").replace("http", "").strip()
             name = f'{str(count).zfill(3)}) {name1[:60]}'
