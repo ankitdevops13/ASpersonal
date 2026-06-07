@@ -1,5 +1,5 @@
-import os
 import re
+import os
 import sys
 import json
 import time
@@ -246,7 +246,7 @@ async def get_signed_video_url(access_token: str, parent_id: str, child_id: str)
         except Exception:
             return None
 
-
+import re
 def extract_ids_from_url(url: str):
     """Extract parentId and childId from URL"""
     parent_id = None
