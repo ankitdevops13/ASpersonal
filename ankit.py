@@ -1253,55 +1253,47 @@ async def upload(bot: Client, m: Message):
                         continue
                 elif "https://apps-s3-jw-prod.utkarshapp.com/admin_v1/file_library/videos" in url:
                     try:
-                        # API Endpoint Path Setup
+                        # [span_0](start_span)API Endpoint Path Setup[span_0](end_span)
                         api_endpoint = f"{API_URL}/video" 
                         file_name_with_ext = f"{name}.mp4"
                         
-                        # Progress status message screen par display karne ke liye
-                        [span_0](start_span)emoji_message = await show_random_emojis(message)[span_0](end_span)
-                        [span_1](start_span)remaining_links = len(links) - count[span_1](end_span)
-                        [span_2](start_span)show_status = f"**🍁 𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗𝗜𝗡𝗚 𝗩𝗜𝗗𝗘𝗢 𝗩𝗜𝗔 𝗔𝗣𝗜 🍁**\n\n**📝ɴᴀᴍᴇ » ** `{name}\n\n🗂️ɪɴᴅᴇ𝘅 » {str(count)}/{len(links)}\n\n🌐ʀᴇᴍᴀɪŋ ᴜʀʟ » {remaining_links}\n\n❄ǫᴜᴀʟɪᴛʏ » {res}`\n\n**M3U8/MP4 Stream Stitcher Active**\n\n𝗕𝗢𝗧 𝗠𝗔𝗗𝗘 ʙʏ ➤ जाटⁱˢß𝐚𝐜𝐤ツ\n\n"[span_2](end_span)
-                        [span_3](start_span)prog = await m.reply_text(show_status)[span_3](end_span)
+                        # [span_1](start_span)Purana standard layout bina kisi faltu kachre ke[span_1](end_span)
+                        [span_2](start_span)remaining_links = len(links) - count[span_2](end_span)
+                        [span_3](start_span)Show = f"**🍁 𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗𝗜𝗡𝗚 🍁**\n\n**📝ɴᴀᴍᴇ » ** `{name}\n\n🔗ᴛᴏᴛᴀʟ ᴜʀʟ » {len(links)}\n\n🗂️ɪɴᴅᴇ𝘅 » {str(count)}/{len(links)}\n\n🌐ʀᴇᴍᴀɪŋ ᴜʀʟ » {remaining_links}\n\n❄ǫᴜᴀʟɪᴛʏ » {res}`\n\n**🔗ᴜʀʟ » ** `{url}`\n\n𝗕𝗢𝗧 𝗠𝗔𝗗𝗘 𝗕𝗬 ➤ जाटⁱˢß𝐚𝐜𝐤ツ\n\n"[span_3](end_span)
+                        [span_4](start_span)prog = await m.reply_text(Show)[span_4](end_span)
 
-                        [span_4](start_span)payload = {"url": url, "name": name}[span_4](end_span)
-                        [span_5](start_span)async with aiohttp.ClientSession() as session:[span_5](end_span)
-                            # Stream merge hone me time lag sakta hai isliye timeout 600 seconds (10 mins) kiya hai
-                            [span_6](start_span)async with session.post(api_endpoint, json=payload, timeout=600) as response:[span_6](end_span)
-                                [span_7](start_span)if response.status == 200:[span_7](end_span)
+                        [span_5](start_span)payload = {"url": url, "name": name}[span_5](end_span)
+                        [span_6](start_span)async with aiohttp.ClientSession() as session:[span_6](end_span)
+                            # Large files/m3u8 streams ke liye safe high timeout window
+                            [span_7](start_span)async with session.post(api_endpoint, json=payload, timeout=600) as response:[span_7](end_span)
+                                if response.status == 200:
                                     with open(file_name_with_ext, "wb") as f:
                                         async for chunk in response.content.iter_chunked(1024 * 1024):
                                             if chunk:
                                                 f.write(chunk)
                                     
-                                    # Streaming complete hone par temporary message delete honge
-                                    [span_8](start_span)await prog.delete(True)[span_8](end_span)
-                                    [span_9](start_span)await emoji_message.delete()[span_9](end_span)
+                                    # [span_8](start_span)Download hote hi status text clear hoga[span_8](end_span)
+                                    [span_9](start_span)await prog.delete(True)[span_9](end_span)
 
-                                    # Video format me send karna (with thumbnail binding verification)
-                                    await bot.send_video(
-                                        chat_id=m.chat.id, 
-                                        video=file_name_with_ext, 
-                                        caption=cc, 
-                                        thumb=thumb if thumb != "no" else None
-                                    )
+                                    # [span_10](start_span)Pure purane style me thumbnail ke sath video forward karna[span_10](end_span)
+                                    [span_11](start_span)await helper.send_vid(bot, m, cc, file_name_with_ext, thumb, name, prog)[span_11](end_span)
 
-                                    [span_10](start_span)count += 1[span_10](end_span)
+                                    [span_12](start_span)count += 1[span_12](end_span)
                                     os.remove(file_name_with_ext)
-                                    [span_11](start_span)time.sleep(1)[span_11](end_span)
+                                    [span_13](start_span)time.sleep(1)[span_13](end_span)
                                 else:
-                                    [span_12](start_span)await prog.delete(True)[span_12](end_span)
-                                    [span_13](start_span)await emoji_message.delete()[span_13](end_span)
-                                    await m.reply_text(f"❌ **API Error ({response.status})**: Video processing validation failed.")
-                                    [span_14](start_span)count += 1[span_14](end_span)
-                                    [span_15](start_span)failed_count += 1[span_15](end_span)
+                                    [span_14](start_span)await prog.delete(True)[span_14](end_span)
+                                    await m.reply_text(f"❌ **API Error ({response.status})**: Video processing failed.")
+                                    [span_15](start_span)count += 1[span_15](end_span)
+                                    [span_16](start_span)failed_count += 1[span_16](end_span)
                     except Exception as e:
                         if 'prog' in locals():
                             await prog.delete(True)
-                        await m.reply_text(f"⚠️ Video Pipeline Error: {str(e)}")
-                        [span_16](start_span)count += 1[span_16](end_span)
-                        [span_17](start_span)failed_count += 1[span_17](end_span)
+                        await m.reply_text(f"⚠️ Video API Error: {str(e)}")
+                        count += 1
+                        failed_count += 1
                         continue
-                        
+                                    
 
                 else:
                     emoji_message = await show_random_emojis(message)
