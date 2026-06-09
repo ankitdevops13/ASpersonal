@@ -1190,103 +1190,32 @@ async def upload(bot: Client, m: Message):
                 # ==================== .ws FILE HANDLING ====================
                 elif ".ws" in url:
                     try:
-                        # Direct API call - /convert endpoint
-                        async with aiohttp.ClientSession() as session:
-                            payload = {
-                                "url": url,
-                                "name": name
-                            }
-                            
-                            async with session.post(
-                                f"{API_URL}/convert",
-                                json=payload,
-                                timeout=60
-                            ) as response:
-                                
-                                if response.status == 200:
-                                    # Save HTML file
-                                    file_content = await response.read()
-                                    os.makedirs("downloads/ws", exist_ok=True)
-                                    html_file = f"downloads/ws/{name}.html"
-                                    
-                                    with open(html_file, "wb") as f:
-                                        f.write(file_content)
-                                    
-                                    # Bot ke zariye HTML file send karna
-                                    copy = await bot.send_document(
-                                        chat_id=m.chat.id, 
-                                        document=html_file, 
-                                        caption=cc1
-                                    )
-                                    count += 1
-                                    
-                                    # File send hone ke baad delete karna
-                                    os.remove(html_file)
-                                    print(f"✅ HTML file sent and deleted: {html_file}")
-                                    
-                                else:
-                                    error_data = await response.json()
-                                    await m.reply_text(f"❌ API Error: {error_data.get('error', 'Unknown error')}")
-                                    
+                        cmd = f'yt-dlp -o "{name}.pdf" "http://192.0.0.4:5000/convert?url={url}"'
+                        download_cmd = f"{cmd} -R 25 --fragment-retries 25"
+                        os.system(download_cmd)
+                        copy = await bot.send_document(chat_id=m.chat.id, document=f'{name}.html', caption=cc1)
+                        count += 1
+                        os.remove(f'{name}.html')
                     except FloodWait as e:
                         await m.reply_text(str(e))
                         time.sleep(e.x)
-                        continue
-                    except Exception as e:
-                        await m.reply_text(f"Error processing .ws file: {str(e)}")
                         continue
                         
                 
  # ==================== PDF.pdf FILE HANDLING ====================
                 elif "PDF.pdf" in url or "apps-s3-prod.utkarshapp.com/admin_v1/file_manager/pdf" in url:
                     try:
-                        await asyncio.sleep(2)
-                        url = url.replace(" ", "%20")
-                        
-                        # Direct API call - /pdf endpoint
-                        async with aiohttp.ClientSession() as session:
-                            payload = {
-                                "url": url,
-                                "name": name
-                            }
-                            
-                            async with session.post(
-                                f"{API_URL}/pdf",
-                                json=payload,
-                                timeout=60
-                            ) as response:
-                                
-                                if response.status == 200:
-                                    # Save PDF file
-                                    file_content = await response.read()
-                                    os.makedirs("downloads/pdf", exist_ok=True)
-                                    pdf_file = f"downloads/pdf/{name}.pdf"
-                                    
-                                    with open(pdf_file, "wb") as f:
-                                        f.write(file_content)
-                                    
-                                    # Bot ke zariye PDF send karna
-                                    copy = await bot.send_document(
-                                        chat_id=m.chat.id, 
-                                        document=pdf_file, 
-                                        caption=cc1
-                                    )
-                                    count += 1
-                                    
-                                    # File send hone ke baad delete karna
-                                    os.remove(pdf_file)
-                                    print(f"✅ PDF sent and deleted: {pdf_file}")
-                                    
-                                else:
-                                    error_data = await response.json()
-                                    await m.reply_text(f"❌ API Error: {error_data.get('error', 'Unknown error')}")
-                                    
+                        cmd = f'yt-dlp -o "{name}.pdf" "http://192.0.0.4:5000/pdf?url={url}"'
+                        download_cmd = f"{cmd} -R 25 --fragment-retries 25"
+                        os.system(download_cmd)
+                        copy = await bot.send_document(chat_id=m.chat.id, document=f'{name}.pdf', caption=cc1)
+                        count += 1
+                        os.remove(f'{name}.pdf')
                     except FloodWait as e:
                         await m.reply_text(str(e))
-                        await asyncio.sleep(e.x)
+                        time.sleep(e.x)
                         continue
-                    except Exception as e:
-                        await m.reply_text(f"⚠️ PDF Download Error: {str(e)}")
+                        
                         
                 elif ".pdf?" in url:
                     # ========================================================
