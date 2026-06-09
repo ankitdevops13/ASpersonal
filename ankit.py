@@ -1147,7 +1147,7 @@ async def upload(bot: Client, m: Message):
             name = f'{str(count).zfill(3)}) {name1[:60]}'
 
             if "https://apps-s3-jw-prod.utkarshapp.com/admin_v1/file_library/videos" in url:
-                url = f"http://192.0.0.4:5000/video?url={url}
+                url = f"http://192.0.0.4:5000/video?url={url}"
                 
             if "youtu" in url:
                 ytf = f"b[height<={raw_text2}][ext=mp4]/bv[height<={raw_text2}][ext=mp4]+ba[ext=m4a]/b[ext=mp4]"
