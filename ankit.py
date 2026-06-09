@@ -375,7 +375,106 @@ async def download2pdf(url, name):
     except Exception as e:
         print(f"[Secure PDF] Exception error: {str(e)}", flush=True)
         return None
+
+# ==================== API CONFIGURATION ====================
+API_URL = "http://192.0.0.4:5000"  # Replace with your Flask server IP
+# Example: "http://103.xx.xx.xx:5000" or "http://localhost:5000" if same server
+
+# ==================== API CALL FUNCTIONS ====================
+
+async def call_api_endpoint(endpoint: str, url: str, name: str = "notes"):
+    """
+    Call Flask API endpoint with given parameters
+    """
+    try:
+        # Using aiohttp for async call
+        async with aiohttp.ClientSession() as session:
+            payload = {
+                "url": url,
+                "name": name
+            }
+            
+            # POST request to API
+            async with session.post(
+                f"{API_URL}/{endpoint}",
+                json=payload,
+                timeout=60
+            ) as response:
+                
+                if response.status == 200:
+                    # Return the response content (file)
+                    return await response.read()
+                else:
+                    error_data = await response.json()
+                    raise Exception(f"API Error {response.status}: {error_data.get('error', 'Unknown error')}")
+                    
+    except Exception as e:
+        print(f"API Call Error: {e}")
+        return None
+
+async def download_file_from_api(endpoint: str, url: str, name: str, file_extension: str = "pdf"):
+    """
+    Download file from API and save locally
+    """
+    try:
+        # Call API and get file content
+        file_content = await call_api_endpoint(endpoint, url, name)
         
+        if file_content:
+            # Create downloads directory
+            os.makedirs("downloads", exist_ok=True)
+            
+            # Save file
+            file_path = f"downloads/{name}.{file_extension}"
+            with open(file_path, "wb") as f:
+                f.write(file_content)
+            
+            return file_path
+        else:
+            return None
+            
+    except Exception as e:
+        print(f"Download error: {e}")
+        return None
+
+# ==================== SPECIFIC FUNCTIONS FOR YOUR BOT ====================
+
+async def download_html_from_api(url: str, name: str) -> str:
+    """
+    Download HTML file from .ws URL
+    """
+    try:
+        # Call /convert endpoint
+        file_path = await download_file_from_api("convert", url, name, "html")
+        return file_path
+    except Exception as e:
+        print(f"HTML download error: {e}")
+        return None
+
+async def download_pdf_from_api(url: str, name: str) -> str:
+    """
+    Download PDF from URL
+    """
+    try:
+        # Call /pdf endpoint
+        file_path = await download_file_from_api("pdf", url, name, "pdf")
+        return file_path
+    except Exception as e:
+        print(f"PDF download error: {e}")
+        return None
+
+async def download_video_from_api(url: str, name: str) -> str:
+    """
+    Download Video from URL
+    """
+    try:
+        # Call /video endpoint
+        file_path = await download_file_from_api("video", url, name, "mp4")
+        return file_path
+    except Exception as e:
+        print(f"Video download error: {e}")
+        return None
+    
 
 bot = Client(
     "bot",
@@ -959,21 +1058,8 @@ async def upload(bot: Client, m: Message):
                 name = f'{str(count).zfill(3)}) {name1[:60]}'
                 cmd = f'yt-dlp -o "{name}.mp4" "{url}"'
 
-            elif "apps-s3-jw-prod.utkarshapp.com" in url:
-                if 'enc_plain_mp4' in url:
-                    url = url.replace(url.split("/")[-1], res+'.mp4')
-
-                elif 'Key-Pair-Id' in url:
-                    url = None
-
-                elif '.m3u8' in url:
-                    q = ((m3u8.loads(requests.get(url).text)).data['playlists'][1]['uri']).split("/")[0]
-                    x = url.split("/")[5]
-                    x = url.replace(x, "")
-                    url = ((m3u8.loads(requests.get(url).text)).data['playlists'][1]['uri']).replace(q+"/", x)
-
-
             
+ 
             elif 'contentId' in url or 'contentHashIdl=' in url:
                 url = unquote(url)
                 content = extract_id(url)
@@ -1059,7 +1145,9 @@ async def upload(bot: Client, m: Message):
 
             name1 = links[i][0].replace("\t", "").replace(":", "").replace("/", "").replace("+", "").replace("#", "").replace("|", "").replace("@", "").replace("*", "").replace(".", "").replace("https", "").replace("http", "").strip()
             name = f'{str(count).zfill(3)}) {name1[:60]}'
-            
+
+            if "https://apps-s3-jw-prod.utkarshapp.com/admin_v1/file_library/videos" in url:
+                url = download_video_from_api(url)
             if "youtu" in url:
                 ytf = f"b[height<={raw_text2}][ext=mp4]/bv[height<={raw_text2}][ext=mp4]+ba[ext=m4a]/b[ext=mp4]"
             else:
@@ -1101,7 +1189,8 @@ async def upload(bot: Client, m: Message):
                 elif ".ws" in url:
                     try:
                         # Dusri file se function call karke HTML file banayi
-                        html_file = download_html(url, name)
+                        html_file = await download_html_from_api(url, name)
+                        
                         
                         # Bot ke zariye HTML file send karna
                         copy = await bot.send_document(chat_id=m.chat.id, document=html_file, caption=cc1)
@@ -1118,7 +1207,7 @@ async def upload(bot: Client, m: Message):
                         await m.reply_text(f"Error processing .ws file: {str(e)}")
                         continue
 
-                elif "PDF.pdf" in url:
+                elif "PDF.pdf" in url or "apps-s3-prod.utkarshapp.com/admin_v1/file_manager/pdf" in url:
                     # ========================================================
                     # SECURE PDF BYPASS INTEGRATION (Using core.py)
                     # ========================================================
@@ -1127,19 +1216,19 @@ async def upload(bot: Client, m: Message):
                         url = url.replace(" ", "%20")
 
                         # Core.py se download_secure_pdf function ko call kar rahe hain
-                        downloaded_pdf = await download2pdf(url, name)
-
-                        if downloaded_pdf and os.path.exists(downloaded_pdf):
+                        pdf_file = await download_pdf_from_api(url, name)
+                        
+                        if pdf_file and os.path.exists(pdf_file):
                             copy = await bot.send_document(
                                 chat_id=m.chat.id, 
-                                document=downloaded_pdf, 
+                                document=pdf_file, 
                                 caption=cc1
                             )
                             count += 1
                             os.remove(downloaded_pdf)
                             print(f"[Bot Success] Successfully uploaded bypassed PDF: {downloaded_pdf}", flush=True)
                         else:
-                            await m.reply_text(f"❌ Secure PDF download fail ho gaya. Link block ho chuka hai.")
+                            await m.reply_text(f"❌ PDF download fail ho gaya. Api Off.")
 
                     except FloodWait as e:
                         await m.reply_text(str(e))
@@ -1148,7 +1237,7 @@ async def upload(bot: Client, m: Message):
                     except Exception as e:
                         await m.reply_text(f"⚠️ PDF Download Error: {str(e)}")
                         
-                elif ".pdf?" in url or "apps-s3-prod.utkarshapp.com/admin_v1/file_manager/pdf" in url:
+                elif ".pdf?" in url:
                     # ========================================================
                     # SECURE PDF BYPASS INTEGRATION (Using core.py)
                     # ========================================================
