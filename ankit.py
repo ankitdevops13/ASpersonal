@@ -378,103 +378,18 @@ async def download2pdf(url, name):
 
 # ==================== API CONFIGURATION ====================
 API_URL = "http://192.0.0.4:5000"  # Replace with your Flask server IP
-# Example: "http://103.xx.xx.xx:5000" or "http://localhost:5000" if same server
 
-# ==================== API CALL FUNCTIONS ====================
-
-async def call_api_endpoint(endpoint: str, url: str, name: str = "notes"):
-    """
-    Call Flask API endpoint with given parameters
-    """
-    try:
-        # Using aiohttp for async call
-        async with aiohttp.ClientSession() as session:
-            payload = {
-                "url": url,
-                "name": name
-            }
-            
-            # POST request to API
-            async with session.post(
-                f"{API_URL}/{endpoint}",
-                json=payload,
-                timeout=60
-            ) as response:
-                
-                if response.status == 200:
-                    # Return the response content (file)
-                    return await response.read()
-                else:
-                    error_data = await response.json()
-                    raise Exception(f"API Error {response.status}: {error_data.get('error', 'Unknown error')}")
-                    
-    except Exception as e:
-        print(f"API Call Error: {e}")
-        return None
-
-async def download_file_from_api(endpoint: str, url: str, name: str, file_extension: str = "pdf"):
-    """
-    Download file from API and save locally
-    """
-    try:
-        # Call API and get file content
-        file_content = await call_api_endpoint(endpoint, url, name)
+def get_api_extension(url):
+    url_lower = url.lower()
+    if ".ws" in url_lower:
+        return ".html"
+    elif ".pdf" in url_lower:
+        return ".pdf"
+    elif ".mp4" in url_lower or ".m3u8" in url_lower:
+        return ".mp4"
+    else:
+        return ".bin"
         
-        if file_content:
-            # Create downloads directory
-            os.makedirs("downloads", exist_ok=True)
-            
-            # Save file
-            file_path = f"downloads/{name}.{file_extension}"
-            with open(file_path, "wb") as f:
-                f.write(file_content)
-            
-            return file_path
-        else:
-            return None
-            
-    except Exception as e:
-        print(f"Download error: {e}")
-        return None
-
-# ==================== SPECIFIC FUNCTIONS FOR YOUR BOT ====================
-
-async def download_html_from_api(url: str, name: str) -> str:
-    """
-    Download HTML file from .ws URL
-    """
-    try:
-        # Call /convert endpoint
-        file_path = await download_file_from_api("convert", url, name, "html")
-        return file_path
-    except Exception as e:
-        print(f"HTML download error: {e}")
-        return None
-
-async def download_pdf_from_api(url: str, name: str) -> str:
-    """
-    Download PDF from URL
-    """
-    try:
-        # Call /pdf endpoint
-        file_path = await download_file_from_api("pdf", url, name, "pdf")
-        return file_path
-    except Exception as e:
-        print(f"PDF download error: {e}")
-        return None
-
-async def download_video_from_api(url: str, name: str) -> str:
-    """
-    Download Video from URL
-    """
-    try:
-        # Call /video endpoint
-        file_path = await download_file_from_api("video", url, name, "mp4")
-        return file_path
-    except Exception as e:
-        print(f"Video download error: {e}")
-        return None
-    
 
 bot = Client(
     "bot",
@@ -1142,8 +1057,7 @@ async def upload(bot: Client, m: Message):
                 print("First Change Url:", url)
                 print("Fallback Change url:", fallback_url)
 
-            elif "https://apps-s3-jw-prod.utkarshapp.com/admin_v1/file_library/videos" in url:
-                url = f"http://192.0.0.4:5000/video?url={url}"
+
 
             name1 = links[i][0].replace("\t", "").replace(":", "").replace("/", "").replace("+", "").replace("#", "").replace("|", "").replace("@", "").replace("*", "").replace(".", "").replace("https", "").replace("http", "").strip()
             name = f'{str(count).zfill(3)}) {name1[:60]}'
@@ -1189,35 +1103,71 @@ async def upload(bot: Client, m: Message):
                         continue
 
                 # ==================== .ws FILE HANDLING ====================
-                elif ".ws" in url:
+                elif ".ws" in url.lower():
                     try:
-                        api = f"http://192.0.0.4:5000/convert?url={url}"
-                        cmd = f'yt-dlp -o "{name}.html" "{api}"'
-                        download_cmd = f"{cmd} -R 25 --fragment-retries 25"
-                        os.system(download_cmd)
-                        copy = await bot.send_document(chat_id=m.chat.id, document=f'{name}.html', caption=cc1)
+                        # API Endpoint Path Setup
+                        api_endpoint = f"{API_URL}/convert" 
+                        file_name_with_ext = f"{name}.html"
+                        
+                        payload = {"url": url, "name": name}
+                        async with aiohttp.ClientSession() as session:
+                            async with session.post(api_endpoint, json=payload, timeout=120) as response:
+                                if response.status == 200:
+                                    with open(file_name_with_ext, "wb") as f:
+                                        async for chunk in response.content.iter_chunked(1024 * 1024):
+                                            if chunk:
+                                                f.write(chunk)
+                                    
+                                    # Direct Document format me send karna
+                                    await bot.send_document(chat_id=m.chat.id, document=file_name_with_ext, caption=cc1)
+
+                                    count += 1
+                                    os.remove(file_name_with_ext)
+                                    time.sleep(1)
+                                else:
+                                    await m.reply_text(f"❌ **API Error ({response.status})**: WS convert fail hua.")
+                                    count += 1
+                                    failed_count += 1
+                    except Exception as e:
+                        await m.reply_text(f"⚠️ WS Pipeline Error: {str(e)}")
                         count += 1
-                        os.remove(f'{name}.html')
-                    except FloodWait as e:
-                        await m.reply_text(str(e))
-                        time.sleep(e.x)
+                        failed_count += 1
                         continue
+                        
                         
                 
  # ==================== PDF.pdf FILE HANDLING ====================
                 elif "PDF.pdf" in url or "apps-s3-prod.utkarshapp.com/admin_v1/file_manager/pdf" in url:
                     try:
-                        api = f"http://192.0.0.4:5000/pdf?url={url}"
-                        cmd = f'yt-dlp -o "{name}.pdf" "{api}"'
-                        download_cmd = f"{cmd} -R 25 --fragment-retries 25"
-                        os.system(download_cmd)
-                        copy = await bot.send_document(chat_id=m.chat.id, document=f'{name}.pdf', caption=cc1)
+                        # API Endpoint Path Setup
+                        api_endpoint = f"{API_URL}/pdf" 
+                        file_name_with_ext = f"{name}.pdf"
+
+                        payload = {"url": url, "name": name}
+                        async with aiohttp.ClientSession() as session:
+                            async with session.post(api_endpoint, json=payload, timeout=180) as response:
+                                if response.status == 200:
+                                    with open(file_name_with_ext, "wb") as f:
+                                        async for chunk in response.content.iter_chunked(1024 * 1024):
+                                            if chunk:
+                                                f.write(chunk)
+                                    
+                                    # Direct Document format me send karna
+                                    await bot.send_document(chat_id=m.chat.id, document=file_name_with_ext, caption=cc1)
+
+                                    count += 1
+                                    os.remove(file_name_with_ext)
+                                    time.sleep(1)
+                                else:
+                                    await m.reply_text(f"❌ **API Error ({response.status})**: PDF download fail hua.")
+                                    count += 1
+                                    failed_count += 1
+                    except Exception as e:
+                        await m.reply_text(f"⚠️ PDF Pipeline Error: {str(e)}")
                         count += 1
-                        os.remove(f'{name}.pdf')
-                    except FloodWait as e:
-                        await m.reply_text(str(e))
-                        time.sleep(e.x)
+                        failed_count += 1
                         continue
+                        
                         
                         
                 elif ".pdf?" in url:
@@ -1301,6 +1251,57 @@ async def upload(bot: Client, m: Message):
                         time.sleep(e.x)
                         count += 1
                         continue
+                elif "https://apps-s3-jw-prod.utkarshapp.com/admin_v1/file_library/videos" in url:
+                    try:
+                        # API Endpoint Path Setup
+                        api_endpoint = f"{API_URL}/video" 
+                        file_name_with_ext = f"{name}.mp4"
+                        
+                        # Progress status message screen par display karne ke liye
+                        [span_0](start_span)emoji_message = await show_random_emojis(message)[span_0](end_span)
+                        [span_1](start_span)remaining_links = len(links) - count[span_1](end_span)
+                        [span_2](start_span)show_status = f"**🍁 𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗𝗜𝗡𝗚 𝗩𝗜𝗗𝗘𝗢 𝗩𝗜𝗔 𝗔𝗣𝗜 🍁**\n\n**📝ɴᴀᴍᴇ » ** `{name}\n\n🗂️ɪɴᴅᴇ𝘅 » {str(count)}/{len(links)}\n\n🌐ʀᴇᴍᴀɪŋ ᴜʀʟ » {remaining_links}\n\n❄ǫᴜᴀʟɪᴛʏ » {res}`\n\n**M3U8/MP4 Stream Stitcher Active**\n\n𝗕𝗢𝗧 𝗠𝗔𝗗𝗘 ʙʏ ➤ जाटⁱˢß𝐚𝐜𝐤ツ\n\n"[span_2](end_span)
+                        [span_3](start_span)prog = await m.reply_text(show_status)[span_3](end_span)
+
+                        [span_4](start_span)payload = {"url": url, "name": name}[span_4](end_span)
+                        [span_5](start_span)async with aiohttp.ClientSession() as session:[span_5](end_span)
+                            # Stream merge hone me time lag sakta hai isliye timeout 600 seconds (10 mins) kiya hai
+                            [span_6](start_span)async with session.post(api_endpoint, json=payload, timeout=600) as response:[span_6](end_span)
+                                [span_7](start_span)if response.status == 200:[span_7](end_span)
+                                    with open(file_name_with_ext, "wb") as f:
+                                        async for chunk in response.content.iter_chunked(1024 * 1024):
+                                            if chunk:
+                                                f.write(chunk)
+                                    
+                                    # Streaming complete hone par temporary message delete honge
+                                    [span_8](start_span)await prog.delete(True)[span_8](end_span)
+                                    [span_9](start_span)await emoji_message.delete()[span_9](end_span)
+
+                                    # Video format me send karna (with thumbnail binding verification)
+                                    await bot.send_video(
+                                        chat_id=m.chat.id, 
+                                        video=file_name_with_ext, 
+                                        caption=cc, 
+                                        thumb=thumb if thumb != "no" else None
+                                    )
+
+                                    [span_10](start_span)count += 1[span_10](end_span)
+                                    os.remove(file_name_with_ext)
+                                    [span_11](start_span)time.sleep(1)[span_11](end_span)
+                                else:
+                                    [span_12](start_span)await prog.delete(True)[span_12](end_span)
+                                    [span_13](start_span)await emoji_message.delete()[span_13](end_span)
+                                    await m.reply_text(f"❌ **API Error ({response.status})**: Video processing validation failed.")
+                                    [span_14](start_span)count += 1[span_14](end_span)
+                                    [span_15](start_span)failed_count += 1[span_15](end_span)
+                    except Exception as e:
+                        if 'prog' in locals():
+                            await prog.delete(True)
+                        await m.reply_text(f"⚠️ Video Pipeline Error: {str(e)}")
+                        [span_16](start_span)count += 1[span_16](end_span)
+                        [span_17](start_span)failed_count += 1[span_17](end_span)
+                        continue
+                        
 
                 else:
                     emoji_message = await show_random_emojis(message)
