@@ -1141,13 +1141,14 @@ async def upload(bot: Client, m: Message):
                 fallback_url = convert_url(url, 'm3u8')
                 print("First Change Url:", url)
                 print("Fallback Change url:", fallback_url)
-                
+
+            elif "https://apps-s3-jw-prod.utkarshapp.com/admin_v1/file_library/videos" in url:
+                url = f"http://192.0.0.4:5000/video?url={url}"
 
             name1 = links[i][0].replace("\t", "").replace(":", "").replace("/", "").replace("+", "").replace("#", "").replace("|", "").replace("@", "").replace("*", "").replace(".", "").replace("https", "").replace("http", "").strip()
             name = f'{str(count).zfill(3)}) {name1[:60]}'
 
-            if "https://apps-s3-jw-prod.utkarshapp.com/admin_v1/file_library/videos" in url:
-                url = f"http://192.0.0.4:5000/video?url={url}"
+            
                 
             if "youtu" in url:
                 ytf = f"b[height<={raw_text2}][ext=mp4]/bv[height<={raw_text2}][ext=mp4]+ba[ext=m4a]/b[ext=mp4]"
@@ -1190,7 +1191,11 @@ async def upload(bot: Client, m: Message):
                 # ==================== .ws FILE HANDLING ====================
                 elif ".ws" in url:
                     try:
-                        cmd = f'yt-dlp -o "{name}.pdf" "http://192.0.0.4:5000/convert?url={url}"'
+                        api = (
+                            "http://192.0.0.4:5000/convert?url="
+                            + quote(url, safe="")
+                        )
+                        cmd = f'yt-dlp -o "{name}.html" "{api}"'
                         download_cmd = f"{cmd} -R 25 --fragment-retries 25"
                         os.system(download_cmd)
                         copy = await bot.send_document(chat_id=m.chat.id, document=f'{name}.html', caption=cc1)
@@ -1205,7 +1210,11 @@ async def upload(bot: Client, m: Message):
  # ==================== PDF.pdf FILE HANDLING ====================
                 elif "PDF.pdf" in url or "apps-s3-prod.utkarshapp.com/admin_v1/file_manager/pdf" in url:
                     try:
-                        cmd = f'yt-dlp -o "{name}.pdf" "http://192.0.0.4:5000/pdf?url={url}"'
+                        api = (
+                            "http://192.0.0.4:5000/pdf?url="
+                            + quote(url, safe="")
+                        )
+                        cmd = f'yt-dlp -o "{name}.pdf" "{api}"'
                         download_cmd = f"{cmd} -R 25 --fragment-retries 25"
                         os.system(download_cmd)
                         copy = await bot.send_document(chat_id=m.chat.id, document=f'{name}.pdf', caption=cc1)
