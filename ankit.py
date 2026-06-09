@@ -1109,7 +1109,7 @@ async def upload(bot: Client, m: Message):
                         api_endpoint = f"{API_URL}/convert" 
                         file_name_with_ext = f"{name}.html"
                         
-                        payload = {"url": url, "name": name}
+                        payload = {"url": url}
                         async with aiohttp.ClientSession() as session:
                             async with session.post(api_endpoint, json=payload, timeout=120) as response:
                                 if response.status == 200:
@@ -1143,7 +1143,7 @@ async def upload(bot: Client, m: Message):
                         api_endpoint = f"{API_URL}/pdf" 
                         file_name_with_ext = f"{name}.pdf"
 
-                        payload = {"url": url, "name": name}
+                        payload = {"url": url}
                         async with aiohttp.ClientSession() as session:
                             async with session.post(api_endpoint, json=payload, timeout=180) as response:
                                 if response.status == 200:
@@ -1262,7 +1262,7 @@ async def upload(bot: Client, m: Message):
                         Show = f"**🍁 𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗𝗜𝗡𝗚 🍁**\n\n**📝ɴᴀᴍᴇ » ** `{name}\n\n🔗ᴛᴏᴛᴀʟ ᴜʀʟ » {len(links)}\n\n🗂️ɪɴᴅᴇ𝘅 » {str(count)}/{len(links)}\n\n🌐ʀᴇᴍᴀɪɴɪŋ ᴜʀʟ » {remaining_links}\n\n❄ǫᴜᴀʟɪᴛʏ » {res}`\n\n**🔗ᴜʀʟ » ** `{url}`\n\n**🎯 Bypass Mode Active (m3u8 check)**\n\n𝗕𝗢𝗧 𝗠𝗔𝗗Ｅ 𝗕𝗬 ➤ जाटⁱˢß𝐚𝐜𝐤ツ\n\n"
                         prog = await m.reply_text(Show)
                         
-                        payload = {"url": url, "name": name}
+                        payload = {"url": url}
                         async with aiohttp.ClientSession() as session:
                             async with session.post(api_endpoint, json=payload, timeout=600) as response:
                                 if response.status == 200:
