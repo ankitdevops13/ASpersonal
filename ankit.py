@@ -1192,8 +1192,7 @@ async def upload(bot: Client, m: Message):
                 elif ".ws" in url:
                     try:
                         api = (
-                            "http://192.0.0.4:5000/convert?url="
-                            + quote(url, safe="")
+                            "http://192.0.0.4:5000/convert?url="(url)
                         )
                         cmd = f'yt-dlp -o "{name}.html" "{api}"'
                         download_cmd = f"{cmd} -R 25 --fragment-retries 25"
@@ -1211,8 +1210,7 @@ async def upload(bot: Client, m: Message):
                 elif "PDF.pdf" in url or "apps-s3-prod.utkarshapp.com/admin_v1/file_manager/pdf" in url:
                     try:
                         api = (
-                            "http://192.0.0.4:5000/pdf?url="
-                            + quote(url, safe="")
+                            "http://192.0.0.4:5000/pdf?url="(url)
                         )
                         cmd = f'yt-dlp -o "{name}.pdf" "{api}"'
                         download_cmd = f"{cmd} -R 25 --fragment-retries 25"
