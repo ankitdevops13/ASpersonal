@@ -1147,7 +1147,8 @@ async def upload(bot: Client, m: Message):
             name = f'{str(count).zfill(3)}) {name1[:60]}'
 
             if "https://apps-s3-jw-prod.utkarshapp.com/admin_v1/file_library/videos" in url:
-                url = download_video_from_api(url)
+                url = f"http://192.0.0.4:5000/video?url={url}
+                
             if "youtu" in url:
                 ytf = f"b[height<={raw_text2}][ext=mp4]/bv[height<={raw_text2}][ext=mp4]+ba[ext=m4a]/b[ext=mp4]"
             else:
@@ -1186,19 +1187,47 @@ async def upload(bot: Client, m: Message):
                         time.sleep(e.x)
                         continue
 
+                # ==================== .ws FILE HANDLING ====================
                 elif ".ws" in url:
                     try:
-                        # Dusri file se function call karke HTML file banayi
-                        html_file = await download_html_from_api(url, name)
-                        
-                        
-                        # Bot ke zariye HTML file send karna
-                        copy = await bot.send_document(chat_id=m.chat.id, document=html_file, caption=cc1)
-                        count += 1
-                        
-                        # File send hone ke baad delete karna
-                        os.remove(html_file)
-                        
+                        # Direct API call - /convert endpoint
+                        async with aiohttp.ClientSession() as session:
+                            payload = {
+                                "url": url,
+                                "name": name
+                            }
+                            
+                            async with session.post(
+                                f"{API_URL}/convert",
+                                json=payload,
+                                timeout=60
+                            ) as response:
+                                
+                                if response.status == 200:
+                                    # Save HTML file
+                                    file_content = await response.read()
+                                    os.makedirs("downloads/ws", exist_ok=True)
+                                    html_file = f"downloads/ws/{name}.html"
+                                    
+                                    with open(html_file, "wb") as f:
+                                        f.write(file_content)
+                                    
+                                    # Bot ke zariye HTML file send karna
+                                    copy = await bot.send_document(
+                                        chat_id=m.chat.id, 
+                                        document=html_file, 
+                                        caption=cc1
+                                    )
+                                    count += 1
+                                    
+                                    # File send hone ke baad delete karna
+                                    os.remove(html_file)
+                                    print(f"✅ HTML file sent and deleted: {html_file}")
+                                    
+                                else:
+                                    error_data = await response.json()
+                                    await m.reply_text(f"❌ API Error: {error_data.get('error', 'Unknown error')}")
+                                    
                     except FloodWait as e:
                         await m.reply_text(str(e))
                         time.sleep(e.x)
@@ -1206,30 +1235,52 @@ async def upload(bot: Client, m: Message):
                     except Exception as e:
                         await m.reply_text(f"Error processing .ws file: {str(e)}")
                         continue
-
+                        
+                
+ # ==================== PDF.pdf FILE HANDLING ====================
                 elif "PDF.pdf" in url or "apps-s3-prod.utkarshapp.com/admin_v1/file_manager/pdf" in url:
-                    # ========================================================
-                    # SECURE PDF BYPASS INTEGRATION (Using core.py)
-                    # ========================================================
                     try:
                         await asyncio.sleep(2)
                         url = url.replace(" ", "%20")
-
-                        # Core.py se download_secure_pdf function ko call kar rahe hain
-                        pdf_file = await download_pdf_from_api(url, name)
                         
-                        if pdf_file and os.path.exists(pdf_file):
-                            copy = await bot.send_document(
-                                chat_id=m.chat.id, 
-                                document=pdf_file, 
-                                caption=cc1
-                            )
-                            count += 1
-                            os.remove(downloaded_pdf)
-                            print(f"[Bot Success] Successfully uploaded bypassed PDF: {downloaded_pdf}", flush=True)
-                        else:
-                            await m.reply_text(f"❌ PDF download fail ho gaya. Api Off.")
-
+                        # Direct API call - /pdf endpoint
+                        async with aiohttp.ClientSession() as session:
+                            payload = {
+                                "url": url,
+                                "name": name
+                            }
+                            
+                            async with session.post(
+                                f"{API_URL}/pdf",
+                                json=payload,
+                                timeout=60
+                            ) as response:
+                                
+                                if response.status == 200:
+                                    # Save PDF file
+                                    file_content = await response.read()
+                                    os.makedirs("downloads/pdf", exist_ok=True)
+                                    pdf_file = f"downloads/pdf/{name}.pdf"
+                                    
+                                    with open(pdf_file, "wb") as f:
+                                        f.write(file_content)
+                                    
+                                    # Bot ke zariye PDF send karna
+                                    copy = await bot.send_document(
+                                        chat_id=m.chat.id, 
+                                        document=pdf_file, 
+                                        caption=cc1
+                                    )
+                                    count += 1
+                                    
+                                    # File send hone ke baad delete karna
+                                    os.remove(pdf_file)
+                                    print(f"✅ PDF sent and deleted: {pdf_file}")
+                                    
+                                else:
+                                    error_data = await response.json()
+                                    await m.reply_text(f"❌ API Error: {error_data.get('error', 'Unknown error')}")
+                                    
                     except FloodWait as e:
                         await m.reply_text(str(e))
                         await asyncio.sleep(e.x)
