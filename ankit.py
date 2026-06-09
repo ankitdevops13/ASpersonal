@@ -1251,49 +1251,66 @@ async def upload(bot: Client, m: Message):
                         time.sleep(e.x)
                         count += 1
                         continue
+                        
                 elif "https://apps-s3-jw-prod.utkarshapp.com/admin_v1/file_library/videos" in url:
                     try:
-                        # [span_0](start_span)API Endpoint Path Setup[span_0](end_span)
                         api_endpoint = f"{API_URL}/video" 
                         file_name_with_ext = f"{name}.mp4"
                         
-                        # [span_1](start_span)Purana standard layout bina kisi faltu kachre ke[span_1](end_span)
-                        [span_2](start_span)remaining_links = len(links) - count[span_2](end_span)
-                        [span_3](start_span)Show = f"**🍁 𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗𝗜𝗡𝗚 🍁**\n\n**📝ɴᴀᴍᴇ » ** `{name}\n\n🔗ᴛᴏᴛᴀʟ ᴜʀʟ » {len(links)}\n\n🗂️ɪɴᴅᴇ𝘅 » {str(count)}/{len(links)}\n\n🌐ʀᴇᴍᴀɪŋ ᴜʀʟ » {remaining_links}\n\n❄ǫᴜᴀʟɪᴛʏ » {res}`\n\n**🔗ᴜʀʟ » ** `{url}`\n\n𝗕𝗢𝗧 𝗠𝗔𝗗𝗘 𝗕𝗬 ➤ जाटⁱˢß𝐚𝐜𝐤ツ\n\n"[span_3](end_span)"
-                        [span_4](start_span)prog = await m.reply_text(Show)[span_4](end_span)
-
-                        [span_5](start_span)payload = {"url": url, "name": name}[span_5](end_span)
-                        [span_6](start_span)async with aiohttp.ClientSession() as session:[span_6](end_span)
-                            # Large files/m3u8 streams ke liye safe high timeout window
-                            [span_7](start_span)async with session.post(api_endpoint, json=payload, timeout=600) as response:[span_7](end_span)
+                        emoji_message = await show_random_emojis(m)
+                        remaining_links = len(links) - count
+                        Show = f"**🍁 𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗𝗜𝗡𝗚 🍁**\n\n**📝ɴᴀᴍᴇ » ** `{name}\n\n🔗ᴛᴏᴛᴀʟ ᴜʀʟ » {len(links)}\n\n🗂️ɪɴᴅᴇ𝘅 » {str(count)}/{len(links)}\n\n🌐ʀᴇᴍᴀɪɴɪŋ ᴜʀʟ » {remaining_links}\n\n❄ǫᴜᴀʟɪᴛʏ » {res}`\n\n**🔗ᴜʀʟ » ** `{url}`\n\n**🎯 Bypass Mode Active (m3u8 check)**\n\n𝗕𝗢𝗧 𝗠𝗔𝗗Ｅ 𝗕𝗬 ➤ जाटⁱˢß𝐚𝐜𝐤ツ\n\n"
+                        prog = await m.reply_text(Show)
+                        
+                        payload = {"url": url, "name": name}
+                        async with aiohttp.ClientSession() as session:
+                            async with session.post(api_endpoint, json=payload, timeout=600) as response:
                                 if response.status == 200:
                                     with open(file_name_with_ext, "wb") as f:
                                         async for chunk in response.content.iter_chunked(1024 * 1024):
                                             if chunk:
                                                 f.write(chunk)
                                     
-                                    # [span_8](start_span)Download hote hi status text clear hoga[span_8](end_span)
-                                    [span_9](start_span)await prog.delete(True)[span_9](end_span)
-
-                                    # [span_10](start_span)Pure purane style me thumbnail ke sath video forward karna[span_10](end_span)
-                                    [span_11](start_span)await helper.send_vid(bot, m, cc, file_name_with_ext, thumb, name, prog)[span_11](end_span)
-
-                                    [span_12](start_span)count += 1[span_12](end_span)
-                                    os.remove(file_name_with_ext)
-                                    [span_13](start_span)time.sleep(1)[span_13](end_span)
+                                    res_file = file_name_with_ext
                                 else:
-                                    [span_14](start_span)await prog.delete(True)[span_14](end_span)
-                                    await m.reply_text(f"❌ **API Error ({response.status})**: Video processing failed.")
-                                    [span_15](start_span)count += 1[span_15](end_span)
-                                    [span_16](start_span)failed_count += 1[span_16](end_span)
+                                    res_file = None
+
+                        if res_file and os.path.exists(res_file):
+                            filename = res_file
+                            await prog.delete(True)
+                            await emoji_message.delete()
+                            await helper.send_vid(bot, m, cc, filename, thumb, name, prog)
+                            count += 1
+                            os.remove(file_name_with_ext)
+                            time.sleep(1)
+                        else:
+                            await prog.delete(True)
+                            await emoji_message.delete()
+                            await m.reply_text(f"❌ **Downloading Failed!** Link validation blocked or expired.")
+                            count += 1
+                            failed_count += 1
+
                     except Exception as e:
                         if 'prog' in locals():
                             await prog.delete(True)
-                        await m.reply_text(f"⚠️ Video API Error: {str(e)}")
+                        if 'emoji_message' in locals():
+                            await emoji_message.delete()
+                            
+                        if "youtube.com" in url or "youtu.be" in url:
+                            await m.reply_text(f"➭ Index » {str(count).zfill(3)}.\n"
+                                               f"➭ Title » {name1}\n"
+                                               f"➭ 𝐁𝐚𝐭𝐜𝐡 » {b_name}\n\n"
+                                               f"YouTube : CLICK HERE({url})")
+                        else:
+                            await m.reply_text(f'‼️𝗗𝗼𝘄𝗻𝗹𝗼𝗮𝗱𝗶𝗻𝗴 𝗙𝗮𝗶𝗹𝗲𝗱‼️\n\n'
+                                               f'📝𝗡𝗮𝗺𝗲 » `{name}`\n\n'
+                                               f'🔗𝗨𝗿𝗹 » <a href="{url}">__**Click Here to See Link**__</a>`')
+
                         count += 1
                         failed_count += 1
                         continue
-                                    
+                        
+
 
                 else:
                     emoji_message = await show_random_emojis(message)
