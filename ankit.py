@@ -324,28 +324,99 @@ async def get_signed_m3u8_url(access_token: str, url: str):
         return None
 
 
-async def download2pdf(url, name):
+def try_decrypt_pdf(encrypted_path, output_path, key_str):
+    """
+    Standard AES-128-CBC Decryption PDF file ke liye openssl module ka use karke.
+    """
+    if not key_str:
+        # Agar key nahi hai toh check karein ki kya ye already valid PDF hai
+        with open(encrypted_path, 'rb') as f:
+            if f.read(4) == b'%PDF':
+                shutil.copy(encrypted_path, output_path)
+                return True
+        return False
+
+    print(f"[Decrypt PDF] Decrypting file with key: {key_str}", flush=True)
+    
+    with open(encrypted_path, 'rb') as f:
+        file_data = f.read()
+
+    if len(file_data) < 32:
+        return False
+
+    iv_bytes = file_data[:16]
+    ciphertext_bytes = file_data[16:]
+
+    # Temp files created
+    temp_cipher = f"temp_cipher_{os.getpid()}.bin"
+    temp_plain = f"temp_plain_{os.getpid()}.pdf"
+
+    with open(temp_cipher, "wb") as f:
+        f.write(ciphertext_bytes)
+
+    hex_iv = iv_bytes.hex()
+
+    # MD5, SHA-256 aur plain string padding ko try karne ke liye list
+    candidates = [
+        key_str.encode('utf-8')[:16].ljust(16, b'\x00'), # Plain padded key
+        hashlib.md5(key_str.encode('utf-8')).digest(),   # MD5 Key
+        hashlib.sha256(key_str.encode('utf-8')).digest()[:16] # SHA-256 Key
+    ]
+
+    for cand_bytes in candidates:
+        hex_key = cand_bytes.hex()
+        
+        # Method 1: IV block parsing decryption
+        cmd = [
+            "openssl", "aes-128-cbc", "-d",
+            "-K", hex_key,
+            "-iv", hex_iv,
+            "-in", temp_cipher,
+            "-out", temp_plain
+        ]
+        subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        if os.path.exists(temp_plain):
+            with open(temp_plain, "rb") as check_f:
+                if check_f.read(4) == b'%PDF':
+                    print("[Decrypt PDF] Success! Valid PDF header matched.", flush=True)
+                    shutil.move(temp_plain, output_path)
+                    if os.path.exists(temp_cipher): os.remove(temp_cipher)
+                    return True
+            os.remove(temp_plain)
+
+        # Method 2: Zero IV decryption (Pure file layout)
+        cmd_zero = [
+            "openssl", "aes-128-cbc", "-d",
+            "-K", hex_key,
+            "-iv", "00000000000000000000000000000000",
+            "-in", encrypted_path,
+            "-out", temp_plain
+        ]
+        subprocess.run(cmd_zero, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        if os.path.exists(temp_plain):
+            with open(temp_plain, "rb") as check_f:
+                if check_f.read(4) == b'%PDF':
+                    print("[Decrypt PDF] Success with Zero-IV padding!", flush=True)
+                    shutil.move(temp_plain, output_path)
+                    if os.path.exists(temp_cipher): os.remove(temp_cipher)
+                    return True
+            os.remove(temp_plain)
+
+    if os.path.exists(temp_cipher): os.remove(temp_cipher)
+    return False
+
+async def download_secure_pdf2(url, name, enc_key=None):
     clean_name = f"{name}.pdf" if not name.endswith(".pdf") else name
-    print(f"[Secure PDF] Download suru ho raha hai: {clean_name}", flush=True)
+    temp_enc = f"temp_enc_{os.getpid()}.pdf"
+    print(f"[Secure PDF] Appx bypass download started for: {clean_name}", flush=True)
     
-    # ⚠️ Pichle step me jo cookie nikali thi, use yaha dalein.
-    # Akamai bina browser cookie ke download nahi karne dega.
-    UTKARSH_COOKIE = "_gcl_au=1.1.2026467561.1780740007; _gid=GA1.2.309059237.1780740008; _ga=GA1.1.2127262317.1780740008; csrf_name=12c2541d50bece75b3b905b484dc446d; ci_session=ub88g7bmr9knopo0o9eeepj0mdrmr6bk; rzp_unified_session_id=SyKWYYGsBUTCpI"
-    
-    # Akamai / AppX bypass karne ke liye complete header bundle
     cmd = [
         "curl", "-L",
-        "-A", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36",
-        "-H", "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-        "-H", "Accept-Language: en-US,en;q=0.9",
-        "-H", f"Cookie: {UTKARSH_COOKIE}", # <--- Cookie check bypass
-        "-H", "Origin: https://online.utkarsh.com",
-        "-H", "Referer: https://online.utkarsh.com/",
-        "-H", "Sec-Fetch-Dest: document",
-        "-H", "Sec-Fetch-Mode: navigate",
-        "-H", "Sec-Fetch-Site: cross-site",
-        "--compressed",
-        "-o", clean_name,
+        "-H", "User-Agent: Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36",
+        "-H", "Referer: https://appx-play.akamai.net.in/",
+        "-o", temp_enc,
         url
     ]
     
@@ -355,26 +426,32 @@ async def download2pdf(url, name):
             stdout=asyncio.subprocess.PIPE, 
             stderr=asyncio.subprocess.PIPE
         )
-        stdout, stderr = await process.communicate()
+        await process.communicate()
         
-        if process.returncode == 0 and os.path.exists(clean_name):
-            # Safe Check: Yeh dekhne ke liye ki kahi HTML error page to download nahi ho gaya
-            with open(clean_name, "rb") as f:
-                header_bytes = f.read(4)
-                # Proper PDF file hamesha '%PDF' string se shuru hoti hai
-                if header_bytes != b"%PDF":
-                    print("[Secure PDF] Warning: File download hui par wo real PDF nahi hai (Server ne error text bheja hai).", flush=True)
-                    # Debug karne ke liye aap dekh sakte hain ki andar kya content aaya
-                    return None
-            
-            print(f"[Secure PDF] Download safal raha: {clean_name}", flush=True)
-            return clean_name
+        if process.returncode == 0 and os.path.exists(temp_enc):
+            # PDF decrypt karne ki koshish karein
+            decrypted = try_decrypt_pdf(temp_enc, clean_name, enc_key)
+            if decrypted and os.path.exists(clean_name):
+                if os.path.exists(temp_enc): os.remove(temp_enc)
+                return clean_name
+            else:
+                # Agar decrypt nahi ho paya fir bhi original copy safe rakhna
+                with open(temp_enc, 'rb') as f:
+                    if f.read(4) == b'%PDF':
+                        shutil.move(temp_enc, clean_name)
+                        return clean_name
+                print("[Secure PDF] Error: PDF is corrupted or has un-matching encryption key.", flush=True)
+                if os.path.exists(temp_enc): os.remove(temp_enc)
+                return None
         else:
-            print("[Secure PDF] Error: Curl download process fail ho gaya.", flush=True)
+            print("[Secure PDF] Error: curl download process failed.", flush=True)
+            if os.path.exists(temp_enc): os.remove(temp_enc)
             return None
     except Exception as e:
-        print(f"[Secure PDF] Exception error: {str(e)}", flush=True)
+        print(f"[Secure PDF] Exception: {str(e)}", flush=True)
+        if os.path.exists(temp_enc): os.remove(temp_enc)
         return None
+        
 
 # ==================== API CONFIGURATION ====================
 API_URL = "http://192.0.0.4:5000"  # Replace with your Flask server IP
@@ -1169,6 +1246,37 @@ async def upload(bot: Client, m: Message):
                         continue
                         
                         
+                elif "*abcdefg" in url:
+                    # ========================================================
+                    # SECURE DECRYPTED PDF BYPASS ROUTER (Appx & Classx Decrypter)
+                    # ========================================================
+                    try:
+                        await asyncio.sleep(2)
+                        url = url.replace(" ", "%20")
+
+                        # core.py se automatic bypass decrypt run karein
+                        downloaded_pdf = await download_secure_pdf2(url, name, enc_key=enc_key)
+
+                        if downloaded_pdf and os.path.exists(downloaded_pdf):
+                            copy = await bot.send_document(
+                                chat_id=m.chat.id, 
+                                document=downloaded_pdf, 
+                                caption=cc1
+                            )
+                            count += 1
+                            os.remove(downloaded_pdf)
+                            print(f"[Success] Successfully decrypted and sent PDF: {downloaded_pdf}", flush=True)
+                        else:
+                            await m.reply_text(f"❌ **Failed to decrypt secure PDF:** Validation rejected or incorrect key.")
+                            count += 1
+                            failed_count += 1
+
+                    except FloodWait as e:
+                        await m.reply_text(str(e))
+                        await asyncio.sleep(e.x)
+                        continue
+                    except Exception as e:
+                        await m.reply_text(f"⚠️ PDF Decrypt Error: {str(e)}")
                         
                 elif ".pdf?" in url:
                     # ========================================================
