@@ -1253,7 +1253,7 @@ async def upload(bot: Client, m: Message):
                     try:
                         await asyncio.sleep(2)
                         url = url.replace(" ", "%20")
-                        enc_key = abcdefg
+                        enc_key = "abcdefg"
 
                         # core.py se automatic bypass decrypt run karein
                         downloaded_pdf = await download_secure_pdf2(url, name, enc_key=enc_key)
