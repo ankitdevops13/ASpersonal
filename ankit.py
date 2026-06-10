@@ -1255,7 +1255,7 @@ async def upload(bot: Client, m: Message):
                         url = url.replace(" ", "%20")
 
                         # core.py se automatic bypass decrypt run karein
-                        downloaded_pdf = await download_secure_pdf2(url, name)
+                        downloaded_pdf = await download_secure_pdf2(url, name, enc_key=enc_key)
 
                         if downloaded_pdf and os.path.exists(downloaded_pdf):
                             copy = await bot.send_document(
