@@ -116,7 +116,7 @@ async def show_random_emojis(message):
 
 # Define the owner's user ID
 OWNER_ID = 6748792256 # Replace with the actual owner's user ID
-
+AUTH_CHANNEL = -1003884699177
 # Initialize the database instance globally
 db = Database()
 
