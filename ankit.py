@@ -480,7 +480,8 @@ def extract_ids_urlparse(url):
 
 async def get_final_player_url(session: aiohttp.ClientSession, url, access_token: str) -> str:
     vid_id =  url.split("/")[-2]
-    parent_id, child_id = extract_ids_urlparse(url)
+    parent_id = url.split("parentId=")[1].split("&")[0]
+    child_id = url.split("childId=")[1]
     print(f"Parent ID: {parent_id}")
     print(f"Child ID: {child_id}")
     # Authorization header normalization validation
@@ -1186,7 +1187,8 @@ async def upload(bot: Client, m: Message):
 
             
             if '/master.mpd' in url or "d1d34p8vz63oiq.cloudfront.net" in url or "parentId=" in url or "childId=" in url:
-                parent_id, child_id = extract_ids_urlparse(url)
+                parent_id = url.split("parentId=")[1].split("&")[0]
+                child_id = url.split("childId=")[1]
                 print(f"Parent ID: {parent_id}")
                 print(f"Child ID: {child_id}")    
                 
