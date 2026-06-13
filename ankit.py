@@ -478,9 +478,11 @@ def extract_ids_urlparse(url):
     return parent_id, child_id
 
 
-async def get_final_player_url(session: aiohttp.ClientSession, parent_id: str, child_id: str, access_token: str) -> str:
+async def get_final_player_url(session: aiohttp.ClientSession, url, access_token: str) -> str:
     vid_id =  url.split("/")[-2]
-    
+    parent_id, child_id = extract_ids_urlparse(url)
+    print(f"Parent ID: {parent_id}")
+    print(f"Child ID: {child_id}")
     # Authorization header normalization validation
     auth_header = token if token.startswith("Bearer ") else f"Bearer {token}"
     
@@ -1206,7 +1208,7 @@ async def upload(bot: Client, m: Message):
 
             
 
-            elif "pw.live" in url or "sec-prod-mediacdn" in url:
+            elif ".mp4?URLPrefix" in url or "/dash" in url:
                 wake_player()
                 url = pw_player(url)
                 print("PW Player URL:", url)
