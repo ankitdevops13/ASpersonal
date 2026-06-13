@@ -1197,7 +1197,7 @@ async def upload(bot: Client, m: Message):
                     # Inner runner function to handle async session
                     async def runner():
                         async with aiohttp.ClientSession() as session:
-                            return await get_final_player_url(session, parent_id, child_id, token)
+                            return await get_final_player_url(session, url, access_token)
                     
                     final_player_url = asyncio.run(runner())
                     if final_player_url:
