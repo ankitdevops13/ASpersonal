@@ -1197,15 +1197,21 @@ async def upload(bot: Client, m: Message):
                     print("⏳ Handshaking with server for generating player url...")
                     
                     # Inner runner function to handle async session
-                    async def runner():
+                    try:
+                        # Alag se session manually handle karne ke bajay agar bot me pehle se ClientSession hai toh wo use karein, 
+                        # nahi toh ye safe dynamic isolated session bana dega.
                         async with aiohttp.ClientSession() as session:
-                            return await get_final_player_url(session, url, access_token)
-                    
-                    final_player_url = asyncio.run(runner())
-                    if final_player_url:
-                        print(f"🎯 FINAL PLAYER URL: {final_player_url}")
-                    else:
-                        print("❌ Signature token calculation failed!")
+                            # 'token' variable aapka login authorization token hona chahiye
+                            final_player_url = await get_final_player_url(session, url, access_token)
+                            
+                            if final_player_url:
+                                print(f"🎯 FINAL PLAYER URL: {final_player_url}")
+                                # Yahan aap is final_player_url ko user ko send ya text me append kar sakte hain
+                            else:
+                                print("❌ Signature token calculation failed!")
+                                
+                    except Exception as loop_error:
+                        print(f"❌ Handshake Execution Error: {loop_error}")
                         
 
             
