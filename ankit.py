@@ -466,7 +466,82 @@ def get_api_extension(url):
         return ".mp4"
     else:
         return ".bin"
+
+
+def extract_ids_urlparse(url):
+    parsed = urlparse(url)
+    params = parse_qs(parsed.query)
+    
+    parent_id = params.get('parentId', [None])[0]
+    child_id = params.get('childId', [None])[0]
+    
+    return parent_id, child_id
+
+
+async def get_final_player_url(session: aiohttp.ClientSession, parent_id: str, child_id: str, access_token: str) -> str:
+    vid_id =  url.split("/")[-2]
+    
+    # Authorization header normalization validation
+    auth_header = token if token.startswith("Bearer ") else f"Bearer {token}"
+    
+    headers = {
+        'Host': 'api.penpencil.co',
+        'Authorization': access_token,
+        'Client-Id': '5eb393ee95fab7468a79d189',
+        'Client-Type': 'WEB',
+        'Client-Version': '1.0.0',
+        'Content-Type': 'application/json',
+        'Origin': 'https://www.pw.live',
+        'Referer': 'https://www.pw.live/',
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36'
+    }
+    
+    api_url = (
+        f"https://api.penpencil.co/v1/videos/video-url-details"
+        f"?type=BATCHES&videoContainerType=DASH&reqType=query"
+        f"&childId={child_id}&parentId={parent_id}&clientVersion=201"
+    )
+    
+    try:
+        # Step 1: Secure options handshake mechanism trigger execution
+        async with session.options(api_url, headers=headers):
+            pass
+            
+        # Step 2: Request final signing payload token suffix matrix
+        async with session.get(api_url, headers=headers) as response:
+            if response.status == 200:
+                res_json = await response.json()
+                token_suffix = res_json.get("data", {}).get("link") or res_json.get("data", {}).get("videoUrl")
+                
+                if token_suffix and "URLPrefix=" in token_suffix:
+                    # Query suffix slicing formatting boundary constraints safely
+                    query_part = token_suffix if token_suffix.startswith("?") else f"?{token_suffix.split('?')[1]}"
+                    
+                    # Regex scanning matching properties safely
+                    expires = re.search(r'Expires=([^&]+)', query_part).group(1)
+                    key_name = re.search(r'KeyName=([^&]+)', query_part).group(1)
+                    signature = re.search(r'Signature=([^&]+)', query_part).group(1)
+                    url_prefix = re.search(r'URLPrefix=([^&]+)', query_part).group(1)
+                    
+                    # Step 3: Domain Swap + Extension Format Swap Routing Matrix (.m3u8)
+                    signed_m3u8 = (
+                        f"https://sec-prod-mediacdn.pw.live/{vid_id}/master.m3u8"
+                        f"?URLPrefix={url_prefix}&Expires={expires}&KeyName={key_name}&Signature={signature}"
+                    )
+                    
+                    # Step 4: Double Web Safe Encoding layer calculation conversion matrix
+                    first_encode = quote(signed_m3u8, safe='')
+                    double_encoded_url = quote(first_encode, safe='')
+                    
+                    # Step 5: Final output concatenation merge framework integration
+                    final_player_url = f"https://learnwithpw-recorded.onrender.com/play?v={first_encoded}"
+                    return final_player_url
+                    
+    except Exception as e:
+        logging.error(f"Error executing core signed token payload calculation: {e}")
         
+    return ""
+    
 
 bot = Client(
     "bot",
@@ -1107,19 +1182,27 @@ async def upload(bot: Client, m: Message):
                     print(f"Request Error: {e}")
             
 
-                        # 1. PEHLE URL KO SIGNED/AUTHENTICATED URL ME BADLEIN
+            
             if '/master.mpd' in url or "d1d34p8vz63oiq.cloudfront.net" in url or "parentId=" in url or "childId=" in url:
-                signed_url = await get_signed_m3u8_url(access_token, url)
-                if signed_url:
-                    url = signed_url  # URL yahan overwrite ho gaya
-                    print("URL successfully updated to SIGNED:", url)
-                else:
-                    print("WARNING: get_signed_m3u8_url returned None!")
+                parent_id, child_id = extract_ids_urlparse(url)
+                print(f"Parent ID: {parent_id}")
+                print(f"Child ID: {child_id}")    
                 
-                player = pw_player2(url)
-                wake_player()
-                print("PW Player URL:", player)
-                
+                # 🌟 SYNC WRAPPER INJECTION HERE 🌟
+                if parent_id and child_id:
+                    print("⏳ Handshaking with server for generating player url...")
+                    
+                    # Inner runner function to handle async session
+                    async def runner():
+                        async with aiohttp.ClientSession() as session:
+                            return await get_final_player_url(session, parent_id, child_id, token)
+                    
+                    final_player_url = asyncio.run(runner())
+                    if final_player_url:
+                        print(f"🎯 FINAL PLAYER URL: {final_player_url}")
+                    else:
+                        print("❌ Signature token calculation failed!")
+                        
 
             
 
