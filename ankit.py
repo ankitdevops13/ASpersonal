@@ -485,7 +485,6 @@ async def get_final_player_url(session: aiohttp.ClientSession, url, access_token
     print(f"Parent ID: {parent_id}")
     print(f"Child ID: {child_id}")
     # Authorization header normalization validation
-    auth_header = token if token.startswith("Bearer ") else f"Bearer {token}"
     
     headers = {
         'Host': 'api.penpencil.co',
@@ -1198,8 +1197,6 @@ async def upload(bot: Client, m: Message):
                     
                     # Inner runner function to handle async session
                     try:
-                        # Alag se session manually handle karne ke bajay agar bot me pehle se ClientSession hai toh wo use karein, 
-                        # nahi toh ye safe dynamic isolated session bana dega.
                         async with aiohttp.ClientSession() as session:
                             # 'token' variable aapka login authorization token hona chahiye
                             final_player_url = await get_final_player_url(session, url, access_token)
