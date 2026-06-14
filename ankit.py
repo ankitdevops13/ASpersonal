@@ -1351,20 +1351,12 @@ async def upload(bot: Client, m: Message):
                         time.sleep(e.x)
                         continue
 
-                
-            # =====================================================================
-            # 🔮 AUTO-EXTRACT ROUTING LOGIC FOR PDF LINKS
-            # =====================================================================
-            enc_key = None
-            if "*" in url:
-                url, enc_key = url.split("*", 1)
-                url = url.strip()
-                enc_key = enc_key.strip()
-
-            # URL configuration check conditions based on your strict regex parameters
-            
+                enc_key = None
+                if "*" in url:
+                   url, enc_key = url.split("*", 1)
+                   url = url.strip()
+                   enc_key = enc_key.strip()
                     
-
                 elif "*abcdefg" in url:
                     # ========================================================
                     # SECURE PDF BYPASS INTEGRATION (Using core.py)
