@@ -1364,9 +1364,9 @@ async def upload(bot: Client, m: Message):
                     try:
                         await asyncio.sleep(2)
 
-                        url = url.replace(" ", "%20")
+                        url = url.replace(" ", "%20").replace("*abcdefg", "")
                         # Core.py se download_secure_pdf function ko call kar rahe hain
-                        downloaded_pdf = await helper.download_and_decrypt_pdf(url, name, enc_key)
+                        downloaded_pdf = await helper.download_secure_pdf(url, name)
 
                         if downloaded_pdf and os.path.exists(downloaded_pdf):
                             copy = await bot.send_document(
