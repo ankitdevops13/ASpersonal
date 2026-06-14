@@ -284,7 +284,7 @@ async def download_secure_pdf(url, name):
     """
     Termux bypass headers ke sath secure PDF download karne ka working function.
     """
-    clean_name = f"{name}.pdf" if not name.endswith(".pdf") else name
+    clean_name = f"{name}.pdf"
     print(f"[Secure PDF] Download suru ho raha hai: {clean_name}", flush=True)
     
     # Custom headers to bypass Akamai and Appx CDN restrictions
