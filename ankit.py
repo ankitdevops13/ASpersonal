@@ -467,7 +467,7 @@ def get_api_extension(url):
     else:
         return ".bin"
 
-async def get_signed_video_url(url, access_token)
+async def get_signed_videourl(url, access_token)
     vid_id =  url.split("/")[-2]
     parent_id = url.split("parentId=")[1].split("&")[0]
     child_id = url.split("childId=")[1]
@@ -488,7 +488,7 @@ async def get_signed_video_url(url, access_token)
         'Randomid': '8ffa361e-4cc7-4948-89e8-72e552ac5460',
         'Devicetype': 'mobile',
         'Networktype': '3g',
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) >
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko)'
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate, br',
         'Accept-Language': 'en-US,en;q=0.9',
@@ -1259,7 +1259,10 @@ async def upload(bot: Client, m: Message):
                 print("PW Player URL:", url)
                 
             elif '/master.mpd' in url or "d1d34p8vz63oiq.cloudfront.net" in url or "parentId=" in url or "childId=" in url:
-                url = await get_signed_video_url(url, access_token)
+                video_url = await get_signed_videourl(url, access_token)
+                wake_player()
+                url = f"https://learnwithpw-recorded.onrender.com/play?v={video_url}"
+                
             elif 'content.allen.in' in url:
                 url = convert_url(url, 'dash')
                 fallback_url = convert_url(url, 'm3u8')
