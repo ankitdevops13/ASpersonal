@@ -1094,6 +1094,7 @@ async def upload(bot: Client, m: Message):
         await m.reply_text("**🚫You are not authorized to use this bot.**")
         return
 
+    user_id = m.from_user.id
     user_first_name = m.from_user.first_name
     user_last_name = m.from_user.last_name or ""
     user_full_name = f"{user_first_name} {user_last_name}".strip()
