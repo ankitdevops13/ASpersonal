@@ -1136,7 +1136,7 @@ async def upload(bot: Client, m: Message):
         return
 
     
-    await editable.edit(f"<pre><code>Total 🔗 links found are __{len(links)}\n\n🔹Img : {img_count}  🔹Pdf : {pdf_count}\n🔹Zip : {zip_count}  🔹Video : {video_count}__</code></pre>\n<pre><code>Send From where you want to download initial is `1`</code></pre>")
+    await editable.edit(f"<pre><code>Total 🔗 links found are {len(links)}\n\n🔹Img : {img_count}  🔹Pdf : {pdf_count}\n🔹Zip : {zip_count}  🔹Video : {video_count}</code></pre>\n<pre><code>Send From where you want to download initial is `1`</code></pre>")
     input0: Message = await bot.listen(editable.chat.id)
     raw_text = input0.text
     await input0.delete(True)
