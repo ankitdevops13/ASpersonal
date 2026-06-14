@@ -509,7 +509,7 @@ async def get_signed_videourl(url, access_token):
                     res_json = await response.json()
                     data_obj = res_json.get("data", {})
 
-                    signed_url = data_obj.get("link") or data_obj.get("videoUrl") or data_obj.get>
+                    signed_url = data_obj.get("link") or data_obj.get("videoUrl") or data_obj.get("signedUrl")
 
                     if signed_url:
                         # FIX: Agar API response sirf '?URLPrefix' se shuru ho raha hai
