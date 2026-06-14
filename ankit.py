@@ -1336,8 +1336,8 @@ async def upload(bot: Client, m: Message):
                 ccimg = f'**\n╭──────.★..─╮\n{str(count).zfill(3)}\n╰─..★.──────╯**\n\n**📝 Title:** {name1} \n**├── Extention :** @AnkitShakya.jpg\n**├── Resolution :** [None]\n\n<pre><code>📚 Batch Name: {b_name}</code></pre>\n\n**📥 Extracted By :**\n╭──────────.✨..─╮\n\n      {CR}\n\n╰─..✨.──────────╯\n\n**<pre><code>━━━━━✦𝐀𝐍𝐊𝐈𝐓❤️✦━━━━━</code></pre>**'
                 ccyt = f'**\n╭──────.★..─╮\n{str(count).zfill(3)}\n╰─..★.──────╯**\n\n╭─────────────────.★..─╮\n   <a href="{url}">__**Click Here to Watch Stream**__</a>\n╰─..★.─────────────────╯\n\n**📝 Title:** {name1} \n**├── Extention :** @AnkitShakya.mkv\n**├── Resolution :** [{res}]\n\n<pre><code>📚 Batch Name: {b_name}</code></pre>\n\n**📥 Extracted By :**\n╭──────────.✨..─╮\n\n      {CR}\n\n╰─..✨.──────────╯\n\n**<pre><code>━━━━━✦𝐀𝐍𝐊𝐈𝐓❤️✦━━━━━</code></pre>**'
                 ccukt = f'**\n╭──────.★..─╮\n{str(count).zfill(3)}\n╰─..★.──────╯**\n\n╭─────────────────.★..─╮\n   <a href="{url}">__**Click Here to Download**__</a>\n╰─..★.─────────────────╯\n\n**📝 Title:** {name1} \n**├── Extention :** @AnkitShakya.doc\n**├── Resolution :** [None]\n\n<pre><code>📚 Batch Name: {b_name}</code></pre>\n\n**📥 Extracted By :**\n╭──────────.✨..─╮\n\n      {CR}\n\n╰─..✨.──────────╯\n\n**<pre><code>━━━━━✦𝐀𝐍𝐊𝐈𝐓❤️✦━━━━━</code></pre>**'
-                
                 cpvod = f'**➭ Index » {str(count).zfill(3)}.\n\n\n➭ Title » {name1}.({res}).mkv\n\n\n🔗𝗩𝗶𝗱𝗲𝗼 𝗨𝗿𝗹 ➤ <a href="{url}">__Click Here to Watch Video__</a>\n\n➭ 𝐁𝐚𝐭𝐜𝐡 » {b_name}\n➭ Quality » {res}\n\n✨ 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐃 𝐁𝐘 {CR}**'
+                
                 
                 if "drive" in url:
                     try:
@@ -1351,6 +1351,50 @@ async def upload(bot: Client, m: Message):
                         time.sleep(e.x)
                         continue
 
+                
+            # =====================================================================
+            # 🔮 AUTO-EXTRACT ROUTING LOGIC FOR PDF LINKS
+            # =====================================================================
+            enc_key = None
+            if "*" in url:
+                url, enc_key = url.split("*", 1)
+                url = url.strip()
+                enc_key = enc_key.strip()
+
+            # URL configuration check conditions based on your strict regex parameters
+            
+                    
+
+                elif "*abcdefg" in url:
+                    # ========================================================
+                    # SECURE PDF BYPASS INTEGRATION (Using core.py)
+                    # ========================================================
+                    try:
+                        await asyncio.sleep(2)
+
+                        url = url.replace(" ", "%20")
+                        # Core.py se download_secure_pdf function ko call kar rahe hain
+                        downloaded_pdf = await helper.download_and_decrypt_pdf(url, name, enc_key)
+
+                        if downloaded_pdf and os.path.exists(downloaded_pdf):
+                            copy = await bot.send_document(
+                                chat_id=m.chat.id, 
+                                document=downloaded_pdf, 
+                                caption=cc1
+                            )
+                            count += 1
+                            os.remove(downloaded_pdf)
+                            print(f"[Bot Success] Successfully uploaded bypassed PDF: {downloaded_pdf}", flush=True)
+                        else:
+                            await m.reply_text(f"❌ Secure PDF download fail ho gaya. Link block ho chuka hai.")
+
+                    except FloodWait as e:
+                        await m.reply_text(str(e))
+                        await asyncio.sleep(e.x)
+                        continue
+                    except Exception as e:
+                        await m.reply_text(f"⚠️ PDF Download Error: {str(e)}")
+                        
                 # ==================== .ws FILE HANDLING ====================
                 elif ".ws" in url.lower():
                     try:
@@ -1366,7 +1410,7 @@ async def upload(bot: Client, m: Message):
                         continue
                                    
                     
-                
+            
                         
                 elif ".pdf?" in url or ".pdf?URLPrefix=" in url:
                     # ========================================================
@@ -1374,10 +1418,6 @@ async def upload(bot: Client, m: Message):
                     # ========================================================
                     try:
                         await asyncio.sleep(2)
-                        
-                        if "*abcdefg" in url:
-                            url = url.replace("abcdefg", " ")
-        
 
                         url = url.replace(" ", "%20")
                         # Core.py se download_secure_pdf function ko call kar rahe hain
