@@ -409,7 +409,7 @@ def try_decrypt_pdf(encrypted_path, output_path, key_str):
     if os.path.exists(temp_cipher): os.remove(temp_cipher)
     return False
 
-async def download_secure_pdf2(url, name, enc_key=None):
+async def encrypted_pdf(url, name, enc_key):
     clean_name = f"{name}.pdf" if not name.endswith(".pdf") else name
     temp_enc = f"temp_enc_{os.getpid()}.pdf"
     print(f"[Secure PDF] Appx bypass download started for: {clean_name}", flush=True)
@@ -1040,6 +1040,53 @@ async def help_command(client: Client, msg: Message):
     )
     await msg.reply_text(help_text)
 
+async def get_credit_name(bot, m, editable, user_id, user_first_name, user_username, user_mention):
+    """Helper function to get credit name from user"""
+    
+    owner_credit = f"𝐀𝐧𝐤𝐢𝐭 𝐒𝐡𝐚𝐤𝐲𝐚™🇮🇳"
+    
+    credit_options = (
+        f"**Choose your credit name:**\n\n"
+        f"👤 **Your Name:** {user_mention}\n"
+        f"🔖 **Username:** @{user_username if user_username else 'Not set'}\n\n"
+        f"**Options:**\n"
+        f"• Send `de` - Use bot owner's name\n"
+        f"• Send `me` - Use your Telegram name\n"
+        f"• Send `username` - Use your @username\n"
+        f"• Or type any custom name\n\n"
+        f"**Default:** Owner's credit"
+    )
+    
+    await editable.edit(credit_options)
+    input3: Message = await bot.listen(editable.chat.id)
+    raw_text3 = input3.text
+    await input3.delete(True)
+    
+    # Process selection
+    if raw_text3 == 'de':
+        CR = owner_credit
+        credit_display = "Bot Owner"
+    elif raw_text3 == 'me':
+        CR = user_mention
+        credit_display = user_first_name
+    elif raw_text3 == 'username':
+        if user_username:
+            CR = f"@{user_username}"
+            credit_display = f"@{user_username}"
+        else:
+            CR = user_mention
+            credit_display = f"{user_first_name} (no username)"
+    else:
+        CR = raw_text3
+        credit_display = "Custom Name"
+    
+    # Show confirmation
+    confirm_msg = await m.reply_text(f"✅ Credit set to: {CR}")
+    await asyncio.sleep(1)
+    await confirm_msg.delete()
+    
+    return CR
+    
 # Upload command handler
 @bot.on_message(filters.command(["txt"]))
 async def upload(bot: Client, m: Message):
@@ -1047,7 +1094,13 @@ async def upload(bot: Client, m: Message):
         await m.reply_text("**🚫You are not authorized to use this bot.**")
         return
 
-    editable = await m.reply_text(f"⚡𝗦𝗘𝗡𝗗 𝗧𝗫𝗧 𝗙𝗜𝗟𝗘⚡")
+    user_first_name = m.from_user.first_name
+    user_last_name = m.from_user.last_name or ""
+    user_full_name = f"{user_first_name} {user_last_name}".strip()
+    user_username = m.from_user.username
+    user_mention = f"<a href='tg://user?id={user_id}'>{user_full_name}</a>"
+    
+    editable = await m.reply_text(f"<pre><code> Send TXT File </code></pre>")
     input: Message = await bot.listen(editable.chat.id)
     x = await input.download()
     await input.delete(True)
@@ -1077,11 +1130,12 @@ async def upload(bot: Client, m: Message):
                     video_count += 1
         os.remove(x)
     except:
-        await m.reply_text("😶𝗜𝗻𝘃𝗮𝗹𝗶𝗱 𝗙𝗶𝗹𝗲 𝗜𝗻𝗽𝘂𝘁😶")
+        await m.reply_text("<pre><code>Invalid file input.</code></pre>")
         os.remove(x)
         return
 
-    await editable.edit(f"`𝗧𝗼𝘁𝗮𝗹 🔗 𝗟𝗶𝗻𝗸𝘀 𝗙𝗼𝘂𝗻𝗱 𝗔𝗿𝗲 {len(links)}\n\n🔹Img : {img_count}  🔹Pdf : {pdf_count}\n🔹Zip : {zip_count}  🔹Video : {video_count}\n\n𝗦𝗲𝗻𝗱 𝗙𝗿𝗼𝗺 𝗪𝗵𝗲𝗿𝗲 𝗬𝗼𝘂 𝗪𝗮𝗻𝘁 𝗧𝗼 𝗗𝗼𝘄𝗻𝗹𝗼𝗮𝗱.`")
+    
+    await editable.edit(f"<pre><code>Total 🔗 links found are __{len(links)}\n\n🔹Img : {img_count}  🔹Pdf : {pdf_count}\n🔹Zip : {zip_count}  🔹Video : {video_count}__</code></pre>\n<pre><code>Send From where you want to download initial is `1`</code></pre>")
     input0: Message = await bot.listen(editable.chat.id)
     raw_text = input0.text
     await input0.delete(True)
@@ -1089,7 +1143,7 @@ async def upload(bot: Client, m: Message):
         arg = int(raw_text)
     except:
         arg = 1
-    await editable.edit("📚 𝗘𝗻𝘁𝗲𝗿 𝗬𝗼𝘂𝗿 𝗕𝗮𝘁𝗰𝗵 𝗡𝗮𝗺𝗲 📚\n\n🦠 𝗦𝗲𝗻𝗱 `1` 𝗙𝗼𝗿 𝗨𝘀𝗲 𝗗𝗲𝗳𝗮𝘂𝗹𝘁 🦠")
+    await editable.edit("<pre><code>**Enter Your Batch Name**</code></pre>\n<pre><code>Send `1` for use default.</code></pre>")
     input1: Message = await bot.listen(editable.chat.id)
     raw_text0 = input1.text
     await input1.delete(True)
@@ -1098,10 +1152,10 @@ async def upload(bot: Client, m: Message):
     else:
         b_name = raw_text0
 
-
-    await editable.edit("**📸 𝗘𝗻𝘁𝗲𝗿 𝗥𝗲𝘀𝗼𝗹𝘂𝘁𝗶𝗼𝗻 📸**\n➤ `144`\n➤ `240`\n➤ `360`\n➤ `480`\n➤ `720`\n➤ `1080`")
+    await editable.edit("<pre><code>╭━━━━❰ᴇɴᴛᴇʀ ʀᴇꜱᴏʟᴜᴛɪᴏɴ❱━━➣ </code></pre>\n┣━━⪼ send `144`  for 144p\n┣━━⪼ send `240`  for 240p\n┣━━⪼ send `360`  for 360p\n┣━━⪼ send `480`  for 480p\n┣━━⪼ send `720`  for 720p\n┣━━⪼ send `1080` for 1080p\n<pre><code>╰━━⌈⚡[ 𝐀𝐧𝐤𝐢𝐭 𝐒𝐡𝐚𝐤𝐲𝐚🇮🇳 ]⚡⌋━━➣ </code></pre>")
     input2: Message = await bot.listen(editable.chat.id)
     raw_text2 = input2.text
+    quality = input2.text
     await input2.delete(True)
     try:
         if raw_text2 == "144":
@@ -1115,42 +1169,32 @@ async def upload(bot: Client, m: Message):
         elif raw_text2 == "720":
             res = "1280x720"
         elif raw_text2 == "1080":
-            res = "1920x1080"
-        else:
+            res = "1920x1080" 
+        else: 
             res = "UN"
     except Exception:
             res = "UN"
 
+    # ========== CREDIT NAME SECTION (4 spaces indentation) ==========
+    # Get credit name from user
+    CR = await get_credit_name(
+        bot, m, editable, user_id, 
+        user_first_name, user_username, user_mention
+    )
+    # ========== END CREDIT NAME SECTION ==========
 
-
-    await editable.edit("📛 𝗘𝗻𝘁𝗲𝗿 𝗬𝗼𝘂𝗿 𝗡𝗮𝗺𝗲 📛\n\n🐥 𝗦𝗲𝗻𝗱 `1` 𝗙𝗼𝗿 𝗨𝘀𝗲 𝗗𝗲𝗳𝗮𝘂𝗹𝘁 🐥")
-    input3: Message = await bot.listen(editable.chat.id)
-    raw_text3 = input3.text
-    await input3.delete(True)
-    credit = "️[जाटⁱˢß𝐚𝐜𝐤ツ](https://t.me/jaat_mk)"
-    if raw_text3 == '1':
-        CR = '[जाटⁱˢß𝐚𝐜𝐤ツ](https://t.me/jaat_mk)'
-    elif raw_text3:
-        try:
-            text, link = raw_text3.split(',')
-            CR = f'[{text.strip()}]({link.strip()})'
-        except ValueError:
-            CR = raw_text3
-    else:
-        CR = credit
-
-    await editable.edit("**𝗘𝗻𝘁𝗲𝗿 𝗣𝘄 𝗧𝗼𝗸𝗲𝗻 𝗙𝗼𝗿 𝗣𝘄 𝗨𝗽𝗹𝗼𝗮𝗱𝗶𝗻𝗴 𝗼𝗿 𝗦𝗲𝗻𝗱 `3` 𝗙𝗼𝗿 𝗢𝘁𝗵𝗲𝗿𝘀**")
+    cptoken = "eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJpZCI6MTYzNjkyNjM0LCJvcmdJZCI6NjA5NzQyLCJ0eXBlIjoxLCJtb2JpbGUiOiI5MTk0MDQ0MDg3NDAiLCJuYW1lIjoiTXlyYSIsImVtYWlsIjoicml5YWhzaHJpdmFzdGF2NCs1MzMyQGdtYWlsLmNvbSIsImlzRmlyc3RMb2dpbiI6dHJ1ZSwiZGVmYXVsdExhbmd1YWdlIjoiRU4iLCJjb3VudHJ5Q29kZSI6IklOIiwiaXNJbnRlcm5hdGlvbmFsIjowLCJpc0RpeSI6dHJ1ZSwibG9naW5WaWEiOiJPdHAiLCJmaW5nZXJwcmludElkIjoiODZmN2RhMjMyMzgxNDk2YTliMjY4YzhkMTAxOGNkMGEiLCJpYXQiOjE3NTkyMTA3ODksImV4cCI6MTc1OTgxNTU4OX0.O3DG_gMpOUet2HKSmH1jK9EEWmjREEMh4cX7DW4yqqkCTzcV5C6-lr6zaY1ihhR4"
+    
+    await editable.edit("<pre><code>**Enter CP or PW Token For 𝐌𝐏𝐃 𝐔𝐑𝐋**</code></pre>\n<pre><code>Send  `unknown`  for use default</code></pre>")
     input4: Message = await bot.listen(editable.chat.id)
     raw_text4 = input4.text
     await input4.delete(True)
-    if raw_text4 == '3':
-        access_token = "token"
+    if raw_text4 == '?':
+        access_token = cptoken
     else:
         access_token = raw_text4
-
-
-
-    await editable.edit("𝗡𝗼𝘄 𝗦𝗲𝗻𝗱 𝗧𝗵𝗲 𝗧𝗵𝘂𝗺𝗯 𝗨𝗿𝗹 𝗘𝗴 » https://graph.org/file/13a89d77002442255efad-989ac290c1b3f13b44.jpg\n\n𝗢𝗿 𝗜𝗳 𝗗𝗼𝗻't 𝗪𝗮𝗻𝘁 𝗧𝗵𝘂𝗺𝗯𝗻𝗮𝗶𝗹 𝗦𝗲𝗻𝗱 = 𝗻𝗼")
+        
+    await editable.edit("<pre><code>⚪Send ☞ jpg url for **Video Thumbnail** format</code></pre>\n<pre><code>🔘Send ☞ jpg url for **Document Thumbnail** format</code></pre>")
     input6 = message = await bot.listen(editable.chat.id)
     raw_text6 = input6.text
     await input6.delete(True)
@@ -1181,22 +1225,6 @@ async def upload(bot: Client, m: Message):
                         url = re.search(r"(https://.*?playlist.m3u8.*?)\"", text).group(1)
 
             
-                
-
-            elif "https://appx-transcoded-videos.livelearn.in/videos/rozgar-data/" in url:
-                url = url.replace("https://appx-transcoded-videos.livelearn.in/videos/rozgar-data/", "")
-                name1 = links[i][0].replace("\t", "").replace(":", "").replace("/", "").replace("+", "").replace("#", "").replace("|", "").replace("@", "@").replace("*", "").replace(".", "").replace("https", "").replace("http", "").strip()
-                name = f'{str(count).zfill(3)}) {name1[:60]}'
-                cmd = f'yt-dlp -o "{name}.mp4" "{url}"'
-
-            elif "https://appx-transcoded-videos-mcdn.akamai.net.in/videos/bhainskipathshala-data/" in url:
-                url = url.replace("https://appx-transcoded-videos-mcdn.akamai.net.in/videos/bhainskipathshala-data/", "")
-                name1 = links[i][0].replace("\t", "").replace(":", "").replace("/", "").replace("+", "").replace("#", "").replace("|", "").replace("@", "@").replace("*", "").replace(".", "").replace("https", "").replace("http", "").strip()
-                name = f'{str(count).zfill(3)}) {name1[:60]}'
-                cmd = f'yt-dlp -o "{name}.mp4" "{url}"'
-
-            
- 
             elif 'contentId' in url or 'contentHashIdl=' in url:
                 url = unquote(url)
                 content = extract_id(url)
@@ -1262,8 +1290,10 @@ async def upload(bot: Client, m: Message):
                 
             elif '/master.mpd' in url or "d1d34p8vz63oiq.cloudfront.net" in url or "parentId=" in url or "childId=" in url:
                 video_url = await get_signed_videourl(url, access_token)
+                print("PW Signed Url:", video_url)
+                encoded_url = urllib.parse.quote(video_url, safe="")
                 wake_player()
-                url = f"https://learnwithpw-recorded.onrender.com/play?v={video_url}"
+                url = f"https://learnwithpw-recorded.onrender.com/play?v={encoded_url}"
                 
             elif 'content.allen.in' in url:
                 url = convert_url(url, 'dash')
@@ -1297,13 +1327,16 @@ async def upload(bot: Client, m: Message):
             
 
             try:
-                cc = f'**➭ Index » {str(count).zfill(3)}.\n➭ Title » {name1}\n➭ 𝐁𝐚𝐭𝐜𝐡 » {b_name}\n➭ Quality » {res}\n\n✨ 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐃 𝐁𝐘 {CR}\n**<b>━━━━━━━✦✗✦━━━━━━━</b>**'
-                cyt = f'**➭ Index » {str(count).zfill(3)}.\n➭ Title » {name1}\n\n\n🔗𝗩𝗶𝗱𝗲𝗼 𝗨𝗿𝗹 ➤ <a href="{url}">__Click Here to Watch Video__</a>\n\n➭ 𝐁𝐚𝐭𝐜𝐡 » {b_name}\n➭ Quality » {res}\n\n✨ 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐃 𝐁𝐘 {CR}**'
+                cc = f'**\n╭──────.★..─╮\n{str(count).zfill(3)}\n╰─..★.──────╯**\n\n**📝 Title:** {name1} \n**├── Extention :** @AnkitShakyaX.mkv\n**├── Resolution :** [{res}]\n\n<pre><code>📚 Batch Name: {b_name}</code></pre>\n\n**📥 Extracted By :**\n╭──────────.✨..─╮\n\n      {CR}\n\n╰─..✨.──────────╯\n\n<pre><code>━━━━━✦𝐀𝐍𝐊𝐈𝐓❤️✦━━━━━</code></pre>'
+                cc1 = f'**\n╭──────.★..─╮\n{str(count).zfill(3)}\n╰─..★.──────╯**\n\n**📝 Title:** {name1} \n**├── Extention :** @AnkitShakyaX.pdf\n**├── Resolution :** [None]\n\n<pre><code>📚 Batch Name: {b_name}</code></pre>\n\n**📥 Extracted By :**\n╭──────────.✨..─╮\n\n      {CR}\n\n╰─..✨.──────────╯\n\n<pre><code>━━━━━✦𝐀𝐍𝐊𝐈𝐓❤️✦━━━━━</code></pre>'
+                html = f'**\n╭──────.★..─╮\n{str(count).zfill(3)}\n╰─..★.──────╯**\n\n**📝 Title:** {name1} \n**├── Extention :** @AnkitShakyaX.pdf\n**├── Resolution :** [None]\n\n<pre><code>📚 Batch Name: {b_name}</code></pre>\n\n**📥 Extracted By :**\n╭──────────.✨..─╮\n\n      {CR}\n\n╰─..✨.──────────╯\n\n<pre><code>━━━━━✦𝐀𝐍𝐊𝐈𝐓❤️✦━━━━━</code></pre>'
+                
+                cczip = f'**\n╭──────.★..─╮\n{str(count).zfill(3)}\n╰─..★.──────╯**\n\n**📝 Title:** {name1} \n**├── Extention :** @AnkitShakyaX.zip\n**├── Resolution :** [None]\n\n<pre><code>📚 Batch Name: {b_name}</code></pre>\n\n**📥 Extracted By :**\n╭──────────.✨..─╮\n\n      {CR}\n\n╰─..✨.──────────╯\n\n<pre><code>━━━━━✦𝐀𝐍𝐊𝐈𝐓❤️✦━━━━━</code></pre>'
+                ccimg = f'**\n╭──────.★..─╮\n{str(count).zfill(3)}\n╰─..★.──────╯**\n\n**📝 Title:** {name1} \n**├── Extention :** @AnkitShakyaX.jpg\n**├── Resolution :** [None]\n\n<pre><code>📚 Batch Name: {b_name}</code></pre>\n\n**📥 Extracted By :**\n╭──────────.✨..─╮\n\n      {CR}\n\n╰─..✨.──────────╯\n\n<pre><code>━━━━━✦𝐀𝐍𝐊𝐈𝐓❤️✦━━━━━</code></pre>'
+                ccyt = f'**\n╭──────.★..─╮\n{str(count).zfill(3)}\n╰─..★.──────╯**\n\n╭─────────────────.★..─╮\n   <a href="{url}">__**Click Here to Watch Stream**__</a>\n╰─..★.─────────────────╯\n\n**📝 Title:** {name1} \n**├── Extention :** @AnkitShakyaX.mkv\n**├── Resolution :** [{res}]\n\n<pre><code>📚 Batch Name: {b_name}</code></pre>\n\n**📥 Extracted By :**\n╭──────────.✨..─╮\n\n      {CR}\n\n╰─..✨.──────────╯\n\n<pre><code>━━━━━✦𝐀𝐍𝐊𝐈𝐓❤️✦━━━━━</code></pre>'
+                ccukt = f'**\n╭──────.★..─╮\n{str(count).zfill(3)}\n╰─..★.──────╯**\n\n╭─────────────────.★..─╮\n   <a href="{url}">__**Click Here to Download**__</a>\n╰─..★.─────────────────╯\n\n**📝 Title:** {name1} \n**├── Extention :** @AnkitShakyaX.doc\n**├── Resolution :** [None]\n\n<pre><code>📚 Batch Name: {b_name}</code></pre>\n\n**📥 Extracted By :**\n╭──────────.✨..─╮\n\n      {CR}\n\n╰─..✨.──────────╯\n\n<pre><code>━━━━━✦𝐀𝐍𝐊𝐈𝐓❤️✦━━━━━</code></pre>'
                 cpvod = f'**➭ Index » {str(count).zfill(3)}.\n\n\n➭ Title » {name1}.({res}).mkv\n\n\n🔗𝗩𝗶𝗱𝗲𝗼 𝗨𝗿𝗹 ➤ <a href="{url}">__Click Here to Watch Video__</a>\n\n➭ 𝐁𝐚𝐭𝐜𝐡 » {b_name}\n➭ Quality » {res}\n\n✨ 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐃 𝐁𝐘 {CR}**'
-                cimg = f'**➭ Index » {str(count).zfill(3)}.\n➭ Title » {name1}\n➭ 𝐁𝐚𝐭𝐜𝐡 » {b_name}\n➭ Quality » {res}\n\n✨ 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐃 𝐁𝐘 {CR}\n**<b>━━━━━━━✦✗✦━━━━━━━</b>**'
-                cczip = f'**➭ Index » {str(count).zfill(3)}.\n➭ Title » {name1}\n➭ 𝐁𝐚𝐭𝐜𝐡 » {b_name}\n➭ Quality » {res}\n\n✨ 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐃 𝐁𝐘 {CR}\n**<b>━━━━━━━✦✗✦━━━━━━━</b>**'
-                cc1 = f'**➭ Index » {str(count).zfill(3)}.\n➭ Title » {name1}\n➭ 𝐁𝐚𝐭𝐜𝐡 » {b_name}\n\n✨ 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐃 𝐁𝐘 {CR}\n**<b>━━━━━━━✦✗✦━━━━━━━</b>**'
-
+                
                 if "drive" in url:
                     try:
                         ka = await helper.download(url, name)
@@ -1319,81 +1352,55 @@ async def upload(bot: Client, m: Message):
                 # ==================== .ws FILE HANDLING ====================
                 elif ".ws" in url.lower():
                     try:
-                        # API Endpoint Path Setup
-                        api_endpoint = f"{API_URL}/convert" 
-                        file_name_with_ext = f"{name}.html"
-                        
-                        payload = {"url": url}
-                        async with aiohttp.ClientSession() as session:
-                            async with session.post(api_endpoint, json=payload, timeout=120) as response:
-                                if response.status == 200:
-                                    with open(file_name_with_ext, "wb") as f:
-                                        async for chunk in response.content.iter_chunked(1024 * 1024):
-                                            if chunk:
-                                                f.write(chunk)
-                                    
-                                    # Direct Document format me send karna
-                                    await bot.send_document(chat_id=m.chat.id, document=file_name_with_ext, caption=cc1)
-
-                                    count += 1
-                                    os.remove(file_name_with_ext)
-                                    time.sleep(1)
-                                else:
-                                    await m.reply_text(f"❌ **API Error ({response.status})**: WS convert fail hua.")
-                                    count += 1
-                                    failed_count += 1
-                    except Exception as e:
-                        await m.reply_text(f"⚠️ WS Pipeline Error: {str(e)}")
+                        cmd = f'{API_URL}/convert?url={url}'
+                        os.system(cmd)
+                        copy = await bot.send_document(chat_id=m.chat.id, document=f'{name}.html', caption=html)
                         count += 1
-                        failed_count += 1
+                        os.remove(f'{name}.html')
+                    except FloodWait as e:
+                        await m.reply_text(str(e))
+                        time.sleep(e.x)
+                        count += 1
                         continue
                         
                         
                 
- # ==================== PDF.pdf FILE HANDLING ====================
+                # ==================== PDF.pdf FILE HANDLING ====================
                 elif "PDF.pdf" in url or "apps-s3-prod.utkarshapp.com/admin_v1/file_manager/pdf" in url:
                     try:
-                        # API Endpoint Path Setup
-                        api_endpoint = f"{API_URL}/pdf" 
-                        file_name_with_ext = f"{name}.pdf"
-
-                        payload = {"url": url}
-                        async with aiohttp.ClientSession() as session:
-                            async with session.post(api_endpoint, json=payload, timeout=180) as response:
-                                if response.status == 200:
-                                    with open(file_name_with_ext, "wb") as f:
-                                        async for chunk in response.content.iter_chunked(1024 * 1024):
-                                            if chunk:
-                                                f.write(chunk)
-                                    
-                                    # Direct Document format me send karna
-                                    await bot.send_document(chat_id=m.chat.id, document=file_name_with_ext, caption=cc1)
-
-                                    count += 1
-                                    os.remove(file_name_with_ext)
-                                    time.sleep(1)
-                                else:
-                                    await m.reply_text(f"❌ **API Error ({response.status})**: PDF download fail hua.")
-                                    count += 1
-                                    failed_count += 1
-                    except Exception as e:
-                        await m.reply_text(f"⚠️ PDF Pipeline Error: {str(e)}")
+                        cmd = f'{API_URL}/pdf?url={url}'
+                        os.system(cmd)
+                        copy = await bot.send_document(chat_id=m.chat.id, document=f'{name}.pdf', caption=cc1)
                         count += 1
-                        failed_count += 1
-                        continue
+                        os.remove(f'{name}.pdf')
+                    except FloodWait as e:
+                        await m.reply_text(str(e))
+                        time.sleep(e.x)
+                        count += 1
+                        continue                
                         
+                elif ".pdf" in url:
+                    try:
+                        cmd = f'yt-dlp -o "{name}.pdf" "{url}"'
+                        download_cmd = f"{cmd} -R 25 --fragment-retries 25"
+                        os.system(download_cmd)
+                        copy = await bot.send_document(chat_id=m.chat.id, document=f'{name}.pdf', caption=cc1)
+                        count += 1
+                        os.remove(f'{name}.pdf')
+                    except FloodWait as e:
+                        await m.reply_text(str(e))
+                        time.sleep(e.x)
+                        count += 1
+                        continue                
                         
                 elif "*abcdefg" in url:
                     # ========================================================
                     # SECURE DECRYPTED PDF BYPASS ROUTER (Appx & Classx Decrypter)
                     # ========================================================
                     try:
-                        await asyncio.sleep(2)
-                        url = url.replace(" ", "%20")
+                        
                         enc_key = "abcdefg"
-
-                        # core.py se automatic bypass decrypt run karein
-                        downloaded_pdf = await download_secure_pdf2(url, name, enc_key=enc_key)
+                        downloaded_pdf = await encrypted_pdf(url, name, enc_key)
 
                         if downloaded_pdf and os.path.exists(downloaded_pdf):
                             copy = await bot.send_document(
