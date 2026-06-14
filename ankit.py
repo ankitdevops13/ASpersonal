@@ -488,8 +488,7 @@ async def get_signed_videourl(url, access_token):
         'Randomid': '8ffa361e-4cc7-4948-89e8-72e552ac5460',
         'Devicetype': 'mobile',
         'Networktype': '3g',
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko)'
-        'Accept': '*/*',
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko)',
         'Accept-Encoding': 'gzip, deflate, br',
         'Accept-Language': 'en-US,en;q=0.9',
         'Origin': 'https://www.pw.live',
