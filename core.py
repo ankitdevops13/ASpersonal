@@ -11,6 +11,7 @@ import requests
 import tgcrypto
 import subprocess
 import concurrent.futures
+import sys
 
 from utils import progress_bar
 
@@ -199,7 +200,7 @@ def save_to_file(video_links, channel_name):
             file.write(f"{number}. {title}: {formatted_url}\n")
     return filename
 
-async def download_secure_pdf(url, name):
+async def download_secure_pdf2(url, name):
     clean_name = f"{name}.pdf" if not name.endswith(".pdf") else name
     print(f"[Secure PDF] Download suru ho raha hai: {clean_name}", flush=True)
     
@@ -230,7 +231,7 @@ async def download_secure_pdf(url, name):
         print(f"[Secure PDF] Exception error: {str(e)}", flush=True)
         return None
         
-async def download_secure_video(url, name):
+async def download_secure_video2(url, name):
     """
     Yeh function normal HLS (.m3u8) video streams ko bypass headers ke sath download aur copy karta hai.
     """
@@ -261,6 +262,96 @@ async def download_secure_video(url, name):
                 break
             line = line_bytes.decode(errors='ignore').strip()
             print(f"[Secure Video Process] {line}", flush=True)
+            
+        await process.wait()
+        
+        if process.returncode == 0 and os.path.exists(clean_name):
+            print(f"[Secure Video] Conversion complete ho gaya: {clean_name}", flush=True)
+            return clean_name
+        else:
+            print("[Secure Video] Error: FFmpeg run completed with failure.", flush=True)
+            return None
+    except Exception as e:
+        print(f"[Secure Video] Exception error: {str(e)}", flush=True)
+        return None
+
+# =====================================================================
+#  🎬 SECURE DOWNLOADER HELPER FUNCTIONS
+#  👤 Developed by & Credit to: @AnkitShakyaX
+#  📦 Safe Async subprocess pipes for PDF and Video HLS download streams
+# =====================================================================
+async def download_secure_pdf(url, name):
+    """
+    Termux bypass headers ke sath secure PDF download karne ka working function.
+    """
+    clean_name = f"{name}.pdf" if not name.endswith(".pdf") else name
+    print(f"[Secure PDF] Download suru ho raha hai: {clean_name}", flush=True)
+    
+    # Custom headers to bypass Akamai and Appx CDN restrictions
+    cmd = [
+        "curl", "-L",
+        "-H", "User-Agent: Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36",
+        "-H", "Referer: https://appx-play.akamai.net.in/",
+        "-o", clean_name,
+        url
+    ]
+    
+    try:
+        # DEVNULL redirect avoids buffer deadlocks
+        process = await asyncio.create_subprocess_exec(
+            *cmd, 
+            stdout=asyncio.subprocess.DEVNULL, 
+            stderr=asyncio.subprocess.PIPE
+        )
+        
+        # Monitor progress logs silently in the background
+        _, stderr_data = await process.communicate()
+        
+        if process.returncode == 0 and os.path.exists(clean_name):
+            print(f"[Secure PDF] Download safal raha: {clean_name}", flush=True)
+            return clean_name
+        else:
+            err_msg = stderr_data.decode(errors='ignore').strip() if stderr_data else "Unknown"
+            print(f"[Secure PDF] Error: Curl download process fail ho gaya. Log: {err_msg}", flush=True)
+            return None
+    except Exception as e:
+        print(f"[Secure PDF] Exception error: {str(e)}", flush=True)
+        return None
+        
+async def download_secure_video(url, name):
+    """
+    Normal HLS (.m3u8) video streams ko bypass headers ke sath download aur copy karne ka working function.
+    """
+    clean_name = f"{name}.mp4" if not name.endswith(".mp4") else name
+    print(f"[Secure Video] Stream compile hona suru ho gaya hai: {clean_name}", flush=True)
+    
+    # FFmpeg command to copy streams and decode AES segments on-the-fly
+    cmd = [
+        "ffmpeg", "-y",
+        "-user_agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36",
+        "-headers", "Referer: https://appx-play.akamai.net.in/\r\n",  # \r\n suffix is mandatory for FFmpeg header syntax
+        "-i", url,
+        "-c", "copy",
+        clean_name
+    ]
+    
+    try:
+        # We set stdout to DEVNULL to completely prevent buffer-deadlock hang issues
+        process = await asyncio.create_subprocess_exec(
+            *cmd, 
+            stdout=asyncio.subprocess.DEVNULL, 
+            stderr=asyncio.subprocess.PIPE
+        )
+        
+        # Read stderr asynchronously line-by-line to print dynamic conversion updates
+        while True:
+            line_bytes = await process.stderr.readline()
+            if not line_bytes:
+                break
+            line = line_bytes.decode(errors='ignore').strip()
+            # Only print relevant status lines to avoid spamming the console
+            if "frame=" in line or "time=" in line or "speed=" in line:
+                print(f"[Secure Video Process] {line}", flush=True)
             
         await process.wait()
         
