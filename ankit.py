@@ -473,9 +473,7 @@ async def get_signed_videourl(url, access_token):
     child_id = url.split("childId=")[1]
     print(f"Parent ID: {parent_id}")
     print(f"Child ID: {child_id}")
-    if "d1d34p8vz63oiq.cloudfront.net" in url:
-        orginal_url = url.replace("d1d34p8vz63oiq.cloudfront.net", "sec-prod-mediacdn.pw.live")
-        
+    
     if not access_token.startswith("Bearer "):
         access_token = f"Bearer {access_token}"
 
@@ -514,6 +512,9 @@ async def get_signed_videourl(url, access_token):
                     if signed_url:
                         # FIX: Agar API response sirf '?URLPrefix' se shuru ho raha hai
                         if signed_url.startswith("?"):
+                            if "d1d34p8vz63oiq.cloudfront.net" in url:
+                                orginal_url = url.replace("d1d34p8vz63oiq.cloudfront.net", "sec-prod-mediacdn.pw.live")
+        
                             # Original input URL se base structure extract karna
                             # E.g., https://.../5830febe-af45-446b-939b-5434194d3305/master.mpd
                             clean_base = original_url.split("?")[0].split("&")[0]
