@@ -1366,35 +1366,7 @@ async def upload(bot: Client, m: Message):
                         continue
                                    
                     
-                elif "*abcdefg" in url:
-                    # ========================================================
-                    # SECURE DECRYPTED PDF BYPASS ROUTER (Appx & Classx Decrypter)
-                    # ========================================================
-                    try:
-                        
-                        enc_key = "abcdefg"
-                        downloaded_pdf = await encrypted_pdf(url, name, enc_key)
-
-                        if downloaded_pdf and os.path.exists(downloaded_pdf):
-                            copy = await bot.send_document(
-                                chat_id=m.chat.id, 
-                                document=downloaded_pdf, 
-                                caption=cc1
-                            )
-                            count += 1
-                            os.remove(downloaded_pdf)
-                            print(f"[Success] Successfully decrypted and sent PDF: {downloaded_pdf}", flush=True)
-                        else:
-                            await m.reply_text(f"❌ **Failed to decrypt secure PDF:** Validation rejected or incorrect key.")
-                            count += 1
-                            failed_count += 1
-
-                    except FloodWait as e:
-                        await m.reply_text(str(e))
-                        await asyncio.sleep(e.x)
-                        continue
-                    except Exception as e:
-                        await m.reply_text(f"⚠️ PDF Decrypt Error: {str(e)}")
+                
                         
                 elif ".pdf?" in url or ".pdf?URLPrefix=" in url:
                     # ========================================================
@@ -1402,8 +1374,12 @@ async def upload(bot: Client, m: Message):
                     # ========================================================
                     try:
                         await asyncio.sleep(2)
-                        url = url.replace(" ", "%20")
+                        
+                        if "*abcdefg" in url:
+                            url = url.replace("abcdefg", " ")
+        
 
+                        url = url.replace(" ", "%20")
                         # Core.py se download_secure_pdf function ko call kar rahe hain
                         downloaded_pdf = await helper.download_secure_pdf(url, name)
 
