@@ -276,6 +276,160 @@ async def download_secure_video2(url, name):
         return None
 
 # =====================================================================
+#  📚 SECURE DECRYPTION PDF DOWNLOAD MATRIX
+#  👤 Developed for & Credit to: @AnkitShakyaX
+#  📦 Standard OpenSSL AES-128-CBC candidate loops & zero IV mapping.
+# =====================================================================
+
+# 1. ADD THIS FUNCTION INSIDE core.py
+async def download_and_decrypt_pdf(url, name, key_str):
+    """
+    Appx/Classx bypass headers ke sath temporary encrypted file download karke
+    AES-128-CBC OpenSSL candidates (Plain text padded, MD5 hash, aur SHA-256) 
+    aur custom/Zero IV matrix ke sweep loop se file ko instant decrypt karta hai.
+    """
+    import os
+    import hashlib
+    import shutil
+    import asyncio
+    
+    clean_name = f"{name}.pdf" if not name.endswith(".pdf") else name
+    temp_enc = f"temp_encrypted_{os.getpid()}.pdf"
+    
+    print(f"[Decrypt PDF] Download and decrypt process initiated for: {clean_name}", flush=True)
+
+    # Download temporary encrypted file via curl bypass
+    cmd_download = [
+        "curl", "-L",
+        "-H", "User-Agent: Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36",
+        "-H", "Referer: https://appx-play.akamai.net.in/",
+        "-o", temp_enc,
+        url
+    ]
+    
+    try:
+        process = await asyncio.create_subprocess_exec(
+            *cmd_download, 
+            stdout=asyncio.subprocess.DEVNULL, 
+            stderr=asyncio.subprocess.PIPE
+        )
+        await process.communicate()
+    except Exception as e:
+        print(f"[Decrypt PDF] Download error: {str(e)}", flush=True)
+        if os.path.exists(temp_enc): os.remove(temp_enc)
+        return None
+
+    if not os.path.exists(temp_enc):
+        print("❌ Error: Temporary encrypted file download failed.", flush=True)
+        return None
+
+    # Check if PDF is already plain/decrypted
+    try:
+        with open(temp_enc, 'rb') as f:
+            if f.read(4) == b'%PDF':
+                print("💡 PDF already un-encrypted (plain)! Saving directly...", flush=True)
+                shutil.copy(temp_enc, clean_name)
+                os.remove(temp_enc)
+                return clean_name
+    except Exception:
+        pass
+
+    print(f"[Decrypt PDF] Running OpenSSL decryption matrix loops...", flush=True)
+
+    try:
+        with open(temp_enc, 'rb') as f:
+            file_bytes = f.read()
+
+        if len(file_bytes) < 32:
+            print("❌ Error: File size too small for decryption.", flush=True)
+            os.remove(temp_enc)
+            return None
+
+        # Appx file format: First 16 bytes = IV, rest = encrypted payload
+        iv_bytes = file_bytes[:16]
+        ciphertext_bytes = file_bytes[16:]
+
+        temp_cipher = f"temp_cipher_{os.getpid()}.bin"
+        temp_plain = f"temp_plain_{os.getpid()}.pdf"
+
+        with open(temp_cipher, 'wb') as f:
+            f.write(ciphertext_bytes)
+
+        hex_iv = iv_bytes.hex()
+        
+        # Key derivations (Plain padded, MD5 digest, SHA-256 slice)
+        candidates = [
+            key_str.encode('utf-8')[:16].ljust(16, b'\x00'),
+            hashlib.md5(key_str.encode('utf-8')).digest(),
+            hashlib.sha256(key_str.encode('utf-8')).digest()[:16]
+        ]
+
+        success = False
+        for cand_bytes in candidates:
+            hex_key = cand_bytes.hex()
+
+            # Method 1: Custom/Extracted IV on ciphertext
+            cmd_decrypt = [
+                "openssl", "aes-128-cbc", "-d",
+                "-K", hex_key,
+                "-iv", hex_iv,
+                "-in", temp_cipher,
+                "-out", temp_plain
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd_decrypt, 
+                stdout=asyncio.subprocess.DEVNULL, 
+                stderr=asyncio.subprocess.DEVNULL
+            )
+            await proc.communicate()
+
+            if os.path.exists(temp_plain):
+                with open(temp_plain, 'rb') as f:
+                    if f.read(4) == b'%PDF':
+                        shutil.copy(temp_plain, clean_name)
+                        success = True
+                        break
+                os.remove(temp_plain)
+
+            # Method 2: Zero IV on full temp payload
+            cmd_zero = [
+                "openssl", "aes-128-cbc", "-d",
+                "-K", hex_key,
+                "-iv", "00000000000000000000000000000000",
+                "-in", temp_enc,
+                "-out", temp_plain
+            ]
+            proc = await asyncio.create_subprocess_exec(
+                *cmd_zero, 
+                stdout=asyncio.subprocess.DEVNULL, 
+                stderr=asyncio.subprocess.DEVNULL
+            )
+            await proc.communicate()
+
+            if os.path.exists(temp_plain):
+                with open(temp_plain, 'rb') as f:
+                    if f.read(4) == b'%PDF':
+                        shutil.copy(temp_plain, clean_name)
+                        success = True
+                        break
+                os.remove(temp_plain)
+
+        if os.path.exists(temp_cipher): os.remove(temp_cipher)
+        if os.path.exists(temp_enc): os.remove(temp_enc)
+
+        if success:
+            print(f"🎉 Success! Decrypted PDF saved to: {clean_name}", flush=True)
+            return clean_name
+        else:
+            print("❌ Decryption failed! No verified key candidates matched.", flush=True)
+            return None
+    except Exception as e:
+        print(f"❌ Decryption exception occurred: {str(e)}", flush=True)
+        if os.path.exists(temp_enc): os.remove(temp_enc)
+        return None
+
+
+# =====================================================================
 #  🎬 SECURE DOWNLOADER HELPER FUNCTIONS
 #  👤 Developed by & Credit to: @AnkitShakyaX
 #  📦 Safe Async subprocess pipes for PDF and Video HLS download streams
