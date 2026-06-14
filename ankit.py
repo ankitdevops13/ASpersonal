@@ -467,7 +467,7 @@ def get_api_extension(url):
     else:
         return ".bin"
 
-async def get_signed_videourl(url, access_token)
+async def get_signed_videourl(url, access_token):
     vid_id =  url.split("/")[-2]
     parent_id = url.split("parentId=")[1].split("&")[0]
     child_id = url.split("childId=")[1]
