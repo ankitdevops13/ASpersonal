@@ -1364,24 +1364,7 @@ async def upload(bot: Client, m: Message):
                         time.sleep(e.x)
                         count += 1
                         continue
-                        
-                        
-                
-                # ==================== PDF.pdf FILE HANDLING ====================
-                elif "PDF.pdf" in url or "apps-s3-prod.utkarshapp.com/admin_v1/file_manager/pdf" in url:
-                    try:
-                        cmd = f"{API_URL}/pdf?url={url}"
-                        os.system(cmd)
-                        copy = await bot.send_document(chat_id=m.chat.id, document=f'{name}.pdf', caption=cc1)
-                        count += 1
-                        os.remove(f'{name}.pdf')
-                    except FloodWait as e:
-                        await m.reply_text(str(e))
-                        time.sleep(e.x)
-                        count += 1
-                        continue                
-                        
-                                
+                                   
                     
                 elif "*abcdefg" in url:
                     # ========================================================
@@ -1458,6 +1441,20 @@ async def upload(bot: Client, m: Message):
                         count += 1
                         continue
 
+                # ==================== PDF.pdf FILE HANDLING ====================
+                elif "PDF.pdf" in url or "apps-s3-prod.utkarshapp.com/admin_v1/file_manager/pdf" in url:
+                    try:
+                        cmd = f"{API_URL}/pdf?url={url}"
+                        os.system(cmd)
+                        copy = await bot.send_document(chat_id=m.chat.id, document=f'{name}.pdf', caption=cc1)
+                        count += 1
+                        os.remove(f'{name}.pdf')
+                    except FloodWait as e:
+                        await m.reply_text(str(e))
+                        time.sleep(e.x)
+                        count += 1
+                        continue
+                        
                 elif "media-cdn.classplusapp.com/drm/" in url:
                     try:
                         await bot.send_photo(chat_id=m.chat.id, photo=cpimg, caption=cpvod)
