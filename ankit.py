@@ -1354,7 +1354,7 @@ async def upload(bot: Client, m: Message):
                 # ==================== .ws FILE HANDLING ====================
                 elif ".ws" in url.lower():
                     try:
-                        cmd = f'{API_URL}/convert?url={url}'
+                        cmd = f"{API_URL}/convert?url={url}"
                         os.system(cmd)
                         copy = await bot.send_document(chat_id=m.chat.id, document=f'{name}.html', caption=html)
                         count += 1
@@ -1370,7 +1370,7 @@ async def upload(bot: Client, m: Message):
                 # ==================== PDF.pdf FILE HANDLING ====================
                 elif "PDF.pdf" in url or "apps-s3-prod.utkarshapp.com/admin_v1/file_manager/pdf" in url:
                     try:
-                        cmd = f'{API_URL}/pdf?url={url}'
+                        cmd = f"{API_URL}/pdf?url={url}"
                         os.system(cmd)
                         copy = await bot.send_document(chat_id=m.chat.id, document=f'{name}.pdf', caption=cc1)
                         count += 1
@@ -1425,7 +1425,7 @@ async def upload(bot: Client, m: Message):
                     except Exception as e:
                         await m.reply_text(f"⚠️ PDF Decrypt Error: {str(e)}")
                         
-                elif '.pdf?' in url or ".pdf?URLPrefix=" in url:
+                elif ".pdf?" in url or ".pdf?URLPrefix=" in url:
                     # ========================================================
                     # SECURE PDF BYPASS INTEGRATION (Using core.py)
                     # ========================================================
