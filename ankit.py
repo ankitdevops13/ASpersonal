@@ -1424,7 +1424,7 @@ async def upload(bot: Client, m: Message):
                     except Exception as e:
                         await m.reply_text(f"⚠️ PDF Decrypt Error: {str(e)}")
                         
-                elif ".pdf?" in url:
+                elif '.pdf?' in url or ".pdf?URLPrefix=" in url:
                     # ========================================================
                     # SECURE PDF BYPASS INTEGRATION (Using core.py)
                     # ========================================================
