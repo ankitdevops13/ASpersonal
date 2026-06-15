@@ -1357,35 +1357,7 @@ async def upload(bot: Client, m: Message):
                    url = url.strip()
                    enc_key = enc_key.strip()
                     
-                elif "*abcdefg" in url:
-                    # ========================================================
-                    # SECURE PDF BYPASS INTEGRATION (Using core.py)
-                    # ========================================================
-                    try:
-                        await asyncio.sleep(2)
-
-                        url = url.replace("*abcdefg", "")
-                        # Core.py se download_secure_pdf function ko call kar rahe hain
-                        downloaded_pdf = await helper.download_secure_pdf(url, name)
-
-                        if downloaded_pdf and os.path.exists(downloaded_pdf):
-                            copy = await bot.send_document(
-                                chat_id=m.chat.id, 
-                                document=downloaded_pdf, 
-                                caption=cc1
-                            )
-                            count += 1
-                            os.remove(downloaded_pdf)
-                            print(f"[Bot Success] Successfully uploaded bypassed PDF: {downloaded_pdf}", flush=True)
-                        else:
-                            await m.reply_text(f"❌ Secure PDF download fail ho gaya. Link block ho chuka hai.")
-
-                    except FloodWait as e:
-                        await m.reply_text(str(e))
-                        await asyncio.sleep(e.x)
-                        continue
-                    except Exception as e:
-                        await m.reply_text(f"⚠️ PDF Download Error: {str(e)}")
+                
                         
                 # ==================== .ws FILE HANDLING ====================
                 elif ".ws" in url.lower():
@@ -1412,6 +1384,9 @@ async def upload(bot: Client, m: Message):
                         await asyncio.sleep(2)
 
                         url = url.replace(" ", "%20")
+                        if "*abcdefg*" in url:
+                            url = url.replace("*abcdefg", "")
+                            print(url)
                         # Core.py se download_secure_pdf function ko call kar rahe hain
                         downloaded_pdf = await helper.download_secure_pdf(url, name)
 
