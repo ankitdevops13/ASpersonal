@@ -1,6 +1,6 @@
 from pathlib import Path
 
-FILE = Path("ankit.py")
+FILE = Path("bot.py")
 
 # ================= YOUR CREDIT =================
 YOUR_NAME = "Aɴᴋɪᴛ"
