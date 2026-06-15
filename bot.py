@@ -1111,15 +1111,19 @@ async def list_users(client: Client, msg: Message):
 # ==================== BOT STARTUP ====================
 async def fetch_bot_info():
     global BOT_USERNAME, BOT_ID, BOT_NAME
+
     me = await bot.get_me()
+
     BOT_USERNAME = me.username
     BOT_ID = me.id
     BOT_NAME = me.first_name
+
     print("================================", flush=True)
     print(f"🤖 Bot Name     : {BOT_NAME}", flush=True)
     print(f"🔗 Bot Username : @{BOT_USERNAME}", flush=True)
     print(f"🆔 Bot ID       : {BOT_ID}", flush=True)
     print("================================", flush=True)
+
 
 async def main():
     await bot.start()
@@ -1128,11 +1132,5 @@ async def main():
     await idle()
     await bot.stop()
 
-if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        print("🛑 Bot stopped by user")
-    except Exception as e:
-        print(f"❌ Error: {e}")
-                      
+
+bot.run(main())
