@@ -1132,5 +1132,8 @@ async def main():
     await idle()
     await bot.stop()
 
-
-bot.run(main())
+if __name__ == "__main__":
+    # Event loop run_until_complete call method
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
+    
