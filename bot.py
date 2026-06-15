@@ -5,6 +5,7 @@ import json
 import time
 import m3u8
 import aiohttp
+import tempfile
 import asyncio
 import requests
 import subprocess
@@ -1127,5 +1128,11 @@ async def main():
     await idle()
     await bot.stop()
 
-bot.run()
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("🛑 Bot stopped by user")
+    except Exception as e:
+        print(f"❌ Error: {e}")
                       
