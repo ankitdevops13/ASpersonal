@@ -335,6 +335,40 @@ async def get_credit_name(bot, m, editable, user_id, user_first_name, user_usern
     await confirm_msg.delete()
     return CR
 
+
+def extract_site_name(url):
+    """Most simple - bas domain ka first part lelo"""
+    try:
+        # Protocol hatao
+        if '://' in url:
+            url = url.split('://')[1]
+        
+        # Path hatao
+        domain = url.split('/')[0]
+        
+        # www hatao
+        domain = domain.replace('www.', '')
+        
+        # Sab parts lo
+        parts = domain.split('.')
+        
+        # Subdomain wale parts ignore karo (jaise media-cdn, static, etc.)
+        # Aur last wala TLD hai (.com, .in, etc.)
+        # Beech ka part chahiye
+        if len(parts) >= 3:
+            # Subdomains hain, second-last part lo
+            name = parts[-2]
+        else:
+            # Sirf domain.com hai, first part lo
+            name = parts[0]
+        
+        # Clean karo
+        name = name.replace('-', ' ').replace('_', ' ').title()
+        
+        return name
+        
+    except:
+        return "Unknown"
 # ==================== BOT INITIALIZATION ====================
 bot = Client(
     "bot",
@@ -945,62 +979,50 @@ async def upload(bot: Client, m: Message):
                         count += 1
                         failed_count += 1
                         continue
-
-                else:
-                    emoji_message = await show_random_emojis(m)
+                        
+                elif "transcoded-videos.classx.co.in" in url.lower() or "classx.co.in" in url.lower():
                     remaining_links = len(links) - count
-                    Show = f"**🍁 𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗𝗜𝗡𝗚 🍁**\n\n**📝ɴᴀᴍᴇ » ** `{name}\n\n🔗ᴛᴏᴛᴀʟ ᴜʀʟ » {len(links)}\n\n🗂️ɪɴᴅᴇ𝘅 » {str(count)}/{len(links)}\n\n🌐ʀᴇᴍᴀɪɴɪɴɢ ᴜʀʟ » {remaining_links}\n\n❄ǫᴜᴀʟɪᴛʏ » {res}`\n\n**🔗ᴜʀʟ » ** `{url}`\n\n**🎯 Bypass Mode Active (m3u8 check)**\n\n𝗕𝗢𝗧 𝗠𝗔𝗗𝗘 𝗕𝗬 ➤ जाटⁱˢß𝐚𝐜𝐤ツ\n\n"
+                    progress = (count / len(links)) * 100
+                    emoji_message = await show_random_emojis(message)
+                    Show = f"<pre><code>𝐀𝐩𝐩𝐱</code></pre>\n\n🚀 𝐏𝐑𝐎𝐆𝐑𝐄𝐒𝐒...» {progress:.2f}%\n\n📥 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃 🚀.. »\n\n├──🎞️ 📊 Total Links = {len(links)}\n\n├──🎞️ ⚡️ Currently On = {str(count).zfill(3)}\n\n├──⏳ Remaining URL = {remaining_links}\n\n├──🎞️ Title:- {name}\n\n├──⌨️ Resolution » {raw_text2}\n\n├──🖼️ Thumbnail » {raw_text6}\n\n├── Url: [{url}]\n\n├──🤖 Bot Made By: 『ᴀɴᴋɪᴛ sʜᴀᴋʏᴀ』"
                     prog = await m.reply_text(Show)
+                    res_file = await download_secure_video(url, cmd, name)
+                    filename = res_file
+                    await prog.delete(True)
+                    await emoji_message.delete()
+                    await helper.send_vid(bot, m, cc, filename, thumb, name, prog)
+                    count += 1
+                    time.sleep(1)
+                    continue
                     
-                    # ✅ FIXED: Direct call to download_video (secure stream handled internally)
-                    res_file = await helper.download_video(url, cmd, name)
-                    
-                    if res_file and os.path.exists(res_file):
-                        filename = res_file
-                        await prog.delete(True)
-                        await emoji_message.delete()
-                        await helper.send_vid(bot, m, cc, filename, thumb, name, prog)
-                        count += 1
-                        time.sleep(1)
-                    else:
-                        await prog.delete(True)
-                        await emoji_message.delete()
-                        await m.reply_text(f"❌ **Downloading Failed!** Link validation blocked or expired.")
-                        count += 1
-                        failed_count += 1
+                else:
+                    remaining_links = len(links) - count
+                    progress = (count / len(links)) * 100
+                    site_name = extract_site_name(url)
+                    emoji_message = await show_random_emojis(message)
+                    Show = f"<pre><code>{site_name}</code></pre>\n\n🚀 𝐏𝐑𝐎𝐆𝐑𝐄𝐒𝐒...» {progress:.2f}%\n\n📥 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃 🚀.. »\n\n├──🎞️ 📊 Total Links = {len(links)}\n\n├──🎞️ ⚡️ Currently On = {str(count).zfill(3)}\n\n├──⏳ Remaining URL = {remaining_links}\n\n├──🎞️ Title:- {name}\n\n├──⌨️ Resolution » {raw_text2}\n\n├──🖼️ Thumbnail » {raw_text6}\n\n├── Url: [{url}]\n\n├──🤖 Bot Made By: 『ᴀɴᴋɪᴛ sʜᴀᴋʏᴀ』"
+                    prog = await m.reply_text(Show)
+                    res_file = await download_video(url, cmd, name)
+                    filename = res_file
+                    await prog.delete(True)
+                    await emoji_message.delete()
+                    await helper.send_vid(bot, m, cc, filename, thumb, name, prog)
+                    count += 1
+                    time.sleep(1)
 
             except Exception as e:
-                if "youtube.com" in url or "youtu.be" in url:
-                    await m.reply_text(f"➭ Index » {str(count).zfill(3)}.\n"
-                                       f"➭ Title » {name1}\n"
-                                       f"➭ 𝐁𝐚𝐭𝐜𝐡 » {b_name}\n\n"
-                                       f"YouTube : CLICK HERE({url})")
-                else:
-                    await m.reply_text(f'‼️𝗗𝗼𝘄𝗻𝗹𝗼𝗮𝗱𝗶𝗻𝗴 𝗙𝗮𝗶𝗹𝗲𝗱‼️\n\n'
-                                       f'📝𝗡𝗮𝗺𝗲 » `{name}`\n\n'
-                                       f'🔗𝗨𝗿𝗹 » <a href="{url}">__**Click Here to See Link**__</a>`')
+                await m.reply_text(
+                    f"\n\n<pre><code>**├──❎ Downloding Fail**</code></pre>\n\n╭──────.★..─╮\n{str(count).zfill(3)}\n╰─..★.──────╯\n\n📝 Title:- {name1}\n\n├──⌨️ Resolution » {raw_text2}\n<pre><code>📚 Batch Name: {b_name}</code></pre>\n\n├──🔗 Url:  <a href= {url} >__**CLICK HERE**__</a>\n\n├──🤖 Bot Made By: 『ᴀɴᴋɪᴛ sʜᴀᴋʏᴀ』"
+                )
                 count += 1
-                failed_count += 1
                 continue
 
-    except Exception as e:
-        await m.reply_text(str(e))
-    
-    await m.reply_text(
-        f"`✨𝗕𝗔𝗧𝗖𝗛 𝗦𝗨𝗠𝗠𝗔𝗥𝗬✨\n\n"
-        f"▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n"
-        f"📛𝗜𝗻𝗱𝗲𝘅 𝗥𝗮𝗻𝗴𝗲 » ({raw_text} to {len(links)})\n"
-        f"📚𝗕𝗮𝘁𝗰𝐡 𝗡𝗮𝗺𝗲 » {b_name}\n\n"
-        f"▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n"
-        f"✨𝗧𝗫𝗧 𝗦𝗨𝗠𝗠𝗔𝗥𝗬✨ : {len(links)}\n"
-        f"▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n"
-        f"🔹𝗩𝗶𝗱𝗲𝗼 » {video_count}\n🔹𝗣𝗱𝗳 » {pdf_count}\n🔹𝗜𝗺𝗴 » {img_count}\n🔹𝗭𝗶𝗽 » {zip_count}\n🔹𝗙𝗮𝗶𝗹𝗲𝗱 𝗨𝗿𝗹 » {failed_count}\n\n"
-        f"▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n"
-        f"✅𝗦𝗧𝗔𝗧𝗨𝗦 » 𝗖𝗢𝗠𝗣𝗟𝗘𝗧𝗘𝗗`"
-    )
-    await m.reply_text(f"<pre><code>📥𝗘𝘅𝘁𝗿𝗮𝗰𝘁𝗲𝗱 𝗕𝘆 ➤『{CR}』</code></pre>")
-    await m.reply_text(f"<pre><code>『😏𝗥𝗲𝗮𝗰𝘁𝗶𝗼н 𝗞𝗼𝗻 𝗗𝗲𝗴𝗮😏』</code></pre>")
 
+    except Exception as e:
+        await m.reply_text(e)    
+    await m.reply_text("🔰Done🔰\n<pre><code>📚Batch Download Successfully</code></pre>")
+    
+                
 # ==================== SUDO COMMANDS ====================
 @bot.on_message(filters.command("sudo"))
 async def sudo_command(bot: Client, message: Message):
