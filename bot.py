@@ -836,7 +836,7 @@ async def upload(bot: Client, m: Message):
                         continue
 
 
-              elif "media-cdn.classplusapp.com/drm/" in url:
+                elif "media-cdn.classplusapp.com/drm/" in url:
                     try:
                         await bot.send_photo(chat_id=m.chat.id, photo=cpimg, caption=cpvod)
                         count += 1
