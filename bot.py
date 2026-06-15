@@ -765,12 +765,6 @@ async def upload(bot: Client, m: Message):
                         time.sleep(e.x)
                         continue
 
-                enc_key = None
-                if "*" in url:
-                    url, enc_key = url.split("*", 1)
-                    url = url.strip()
-                    enc_key = enc_key.strip()
-
                 elif ".ws" in url.lower():
                     try:
                         cmd = f"{API_URL}/convert?url={url}"
