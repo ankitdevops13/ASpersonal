@@ -21,4 +21,4 @@ COPY . /app
 
 RUN python fix_credit.py
 
-CMD gunicorn app:app & python3 bot.py
+CMD ["python", "bot.py"]
