@@ -289,25 +289,73 @@ async def download_secure_video(url, name):
 #  ✅ FALLBACK DOWNLOAD FUNCTIONS
 # =====================================================================
 async def download_video(url, cmd, name):
-    # Optimized aria2c with more connections and faster settings
-    aria2c_cmd = f'{cmd} -R 25 --fragment-retries 25 --external-downloader aria2c --downloader-args "aria2c: -x 32 -j 32 -s 32 -k 1M --max-connection-per-server=32 --min-split-size=1M"'
-    fallback_cmd = f'{cmd} -R 10 --fragment-retries 10'
+    download_cmd = f'{cmd} -R 25 --fragment-retries 25 --external-downloader aria2c --downloader-args "aria2c: -x 16 -j 32"'
+    global failed_counter
+    print(download_cmd)
+    logging.info(download_cmd)
+    k = subprocess.run(download_cmd, shell=True)
+    
+    # Check if the URL is of type 'visionias' or 'penpencilvod'
+    if "visionias" in cmd:
+        return await download_visionias(url, cmd, name)
+    elif "penpencilvod" in cmd:
+        return await download_penpencilvod(url, cmd, name)
+    else:
+        # Default handling for other types of URLs
+        return await default_download(url, cmd, name)
 
-    for attempt in range(2):
-        logging.info(f"[Download Attempt {attempt + 1}] Running command: {aria2c_cmd if attempt == 0 else fallback_cmd}")
-        selected_cmd = aria2c_cmd if attempt == 0 else fallback_cmd
-        result = subprocess.run(selected_cmd, shell=True)
-        if result.returncode == 0:
-            break
-        await asyncio.sleep(2)
+async def download_visionias(url, cmd, name):
+    global failed_counter
+    # Retry logic for 'visionias' URLs
+    if failed_counter <= 10:
+        failed_counter += 1
+        await asyncio.sleep(5)
+        return await download_video(url, cmd, name)
+    else:
+        # Reset failed_counter if the download succeeds
+        failed_counter = 0
+        return await default_download(url, cmd, name)
 
-    # Fast file detection with optimized order
-    for ext in ["", ".mp4", ".mkv", ".webm", ".mp4.webm"]:
-        target_file = name + ext
-        if os.path.isfile(target_file):
-            return target_file
+async def download_penpencilvod(url, cmd, name):
+    global failed_counter
+    # Retry logic for 'penpencilvod' URLs
+    if failed_counter <= 10:
+        failed_counter += 1
+        await asyncio.sleep(5)
+        return await download_video(url, cmd, name)
+    else:
+        # Reset failed_counter if the download succeeds
+        failed_counter = 0
+        return await default_download(url, cmd, name)
 
-    return name
+
+async def download_video(url,cmd, name):
+    download_cmd = f'{cmd} -R 25 --fragment-retries 25 --external-downloader aria2c --downloader-args "aria2c: -x 16 -j 32"'
+    global failed_counter
+    print(download_cmd)
+    logging.info(download_cmd)
+    k = subprocess.run(download_cmd, shell=True)
+    if "visionias" in cmd and k.returncode != 0 and failed_counter <= 10:
+        failed_counter += 1
+        await asyncio.sleep(5)
+        await download_video(url, cmd, name)
+    failed_counter = 0
+    try:
+        if os.path.isfile(name):
+            return name
+        elif os.path.isfile(f"{name}.webm"):
+            return f"{name}.webm"
+        name = name.split(".")[0]
+        if os.path.isfile(f"{name}.mkv"):
+            return f"{name}.mkv"
+        elif os.path.isfile(f"{name}.mp4"):
+            return f"{name}.mp4"
+        elif os.path.isfile(f"{name}.mp4.webm"):
+            return f"{name}.mp4.webm"
+
+        return name
+    except FileNotFoundError as exc:
+        return os.path.isfile.splitext[0] + "." + "mp4"
 
 async def send_doc(bot: Client, m: Message, cc, ka, cc1, prog, count, name):
     reply = await m.reply_text(f"**Uploading ..🚀..** - `{name}`\n<pre><code>╰────⌈𝐀𝐧𝐤𝐢𝐭 𝐒𝐡𝐚𝐤𝐲𝐚™🇮🇳⌋────╯</code></pre>")
