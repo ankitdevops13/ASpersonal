@@ -289,7 +289,8 @@ async def download_secure_video(url, name):
 #  ✅ FALLBACK DOWNLOAD FUNCTIONS
 # =====================================================================
 async def download_video(url, cmd, name):
-    aria2c_cmd = f'{cmd} -R 25 --fragment-retries 25 --external-downloader aria2c --downloader-args "aria2c: -x 16 -j 32"'
+    # Optimized aria2c with more connections and faster settings
+    aria2c_cmd = f'{cmd} -R 25 --fragment-retries 25 --external-downloader aria2c --downloader-args "aria2c: -x 32 -j 32 -s 32 -k 1M --max-connection-per-server=32 --min-split-size=1M"'
     fallback_cmd = f'{cmd} -R 10 --fragment-retries 10'
 
     for attempt in range(2):
@@ -300,13 +301,13 @@ async def download_video(url, cmd, name):
             break
         await asyncio.sleep(2)
 
-    for ext in ["", ".webm", ".mp4", ".mkv", ".mp4.webm"]:
+    # Fast file detection with optimized order
+    for ext in ["", ".mp4", ".mkv", ".webm", ".mp4.webm"]:
         target_file = name + ext
         if os.path.isfile(target_file):
             return target_file
 
     return name
-
 
 async def send_doc(bot: Client, m: Message, cc, ka, cc1, prog, count, name):
     reply = await m.reply_text(f"**Uploading ..🚀..** - `{name}`\n<pre><code>╰────⌈𝐀𝐧𝐤𝐢𝐭 𝐒𝐡𝐚𝐤𝐲𝐚™🇮🇳⌋────╯</code></pre>")
