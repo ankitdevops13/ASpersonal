@@ -194,7 +194,7 @@ def pw_player(url):
     return PLAYER_BASE + encoded
 
 
-def adda247_video(url, access_token, name):
+def download_adda247_video(url, access_token, name):
     # Safety check
     if not url or not access_token:
         return False
@@ -258,6 +258,91 @@ def adda247_video(url, access_token, name):
 
 
 
+async def adda247_video(url, access_token, name):
+    
+    if not url or not access_token:
+        return None
+
+    output_path = f"{name}.mp4"
+    m3u8_file = "cache_playlist.m3u8"
+
+    # Helper async curl function
+    async def download_with_token(url, output_file):
+        cmd = [
+            'curl', '-s', '-L', '-k',
+            '-H', 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
+            '-H', 'Accept: */*',
+            '-H', 'Referer: https://www.adda247.com/',
+            '-H', 'Origin: https://www.adda247.com',
+            '-H', f'x-jwt-token: {access_token}',
+            '-o', output_file,
+            url
+        ]
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        await process.communicate()
+        return process.returncode == 0
+
+    # 1. Download M3U8
+    if os.path.exists(m3u8_file):
+        os.remove(m3u8_file)
+
+    if not await download_with_token(url, m3u8_file):
+        return None
+
+    if not os.path.exists(m3u8_file) or os.path.getsize(m3u8_file) < 100:
+        os.remove(m3u8_file)
+        return None
+
+    # 2. Parse segments
+    with open(m3u8_file, "r", encoding="utf-8") as f:
+        lines = [line.strip() for line in f.readlines() if line.strip()]
+
+    base_url = url.rsplit('/', 1)[0] + '/'
+    segments = []
+    for line in lines:
+        if line.startswith('http') and '.ts' in line:
+            segments.append(line)
+        elif not line.startswith('#') and line.endswith('.ts'):
+            segments.append(base_url + line)
+
+    if not segments:
+        os.remove(m3u8_file)
+        return None
+
+    # 3. Download chunks
+    chunk_files = []
+    for idx, chunk_url in enumerate(segments, 1):
+        temp_chunk_name = f"raw_chunk_{idx:05d}.ts"
+        if not await download_with_token(chunk_url, temp_chunk_name):
+            # Cleanup on failure
+            for f in chunk_files:
+                if os.path.exists(f):
+                    os.remove(f)
+            if os.path.exists(m3u8_file):
+                os.remove(m3u8_file)
+            return None
+        chunk_files.append(temp_chunk_name)
+
+    # 4. Combine and clean up
+    # (Using 'cat' for Linux, works perfectly in Termux)
+    os.system(f"cat {' '.join(chunk_files)} > \"{output_path}\"")
+
+    # Cleanup temporary files
+    for f in chunk_files:
+        if os.path.exists(f):
+            os.remove(f)
+    if os.path.exists(m3u8_file):
+        os.remove(m3u8_file)
+
+    # Return file path if successful
+    if os.path.exists(output_path) and os.path.getsize(output_path) > 1000:
+        return output_path
+    else:
+        return None
 
 async def adda247_pdf(url, access_token, name):
     
@@ -1055,7 +1140,7 @@ async def upload(bot: Client, m: Message):
                         count += 1
                         failed_count += 1
                         continue
-                        
+
                 elif "transcoded-videos.classx.co.in" in url.lower() or "classx.co.in" in url.lower():
                     remaining_links = len(links) - count
                     progress = (count / len(links)) * 100
@@ -1063,6 +1148,22 @@ async def upload(bot: Client, m: Message):
                     Show = f"<pre><code>𝐀𝐩𝐩𝐱</code></pre>\n\n🚀 𝐏𝐑𝐎𝐆𝐑𝐄𝐒𝐒...» {progress:.2f}%\n\n📥 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃 🚀.. »\n\n├──🎞️ 📊 Total Links = {len(links)}\n\n├──🎞️ ⚡️ Currently On = {str(count).zfill(3)}\n\n├──⏳ Remaining URL = {remaining_links}\n\n├──🎞️ Title:- {name}\n\n├──⌨️ Resolution » {raw_text2}\n\n├──🖼️ Thumbnail » {raw_text6}\n\n├── Url: [{url}]\n\n├──🤖 Bot Made By: 『ᴀɴᴋɪᴛ sʜᴀᴋʏᴀ』"
                     prog = await m.reply_text(Show)
                     res_file = await download_secure_video(url, name)
+                    filename = res_file
+                    await prog.delete(True)
+                    await emoji_message.delete()
+                    await helper.send_vid(bot, m, cc, filename, thumb, name, prog)
+                    count += 1
+                    time.sleep(1)
+                    continue
+                    
+                elif "videotest.adda247.com" in url.lower() or "480p30playlist.m3u8" in url.lower():
+                    remaining_links = len(links) - count
+                    progress = (count / len(links)) * 100
+                    site_name = extract_site_name(url)
+                    emoji_message = await show_random_emojis(message)
+                    Show = f"<pre><code>{site_name}</code></pre>\n\n🚀 𝐏𝐑𝐎𝐆𝐑𝐄𝐒𝐒...» {progress:.2f}%\n\n📥 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃 🚀.. »\n\n├──🎞️ 📊 Total Links = {len(links)}\n\n├──🎞️ ⚡️ Currently On = {str(count).zfill(3)}\n\n├──⏳ Remaining URL = {remaining_links}\n\n├──🎞️ Title:- {name}\n\n├──⌨️ Resolution » {raw_text2}\n\n├──🖼️ Thumbnail » {raw_text6}\n\n├── Url: [{url}]\n\n├──🤖 Bot Made By: 『ᴀɴᴋɪᴛ sʜᴀᴋʏᴀ』"
+                    prog = await m.reply_text(Show)
+                    res_file = await adda247_video(url, access_token, name)
                     filename = res_file
                     await prog.delete(True)
                     await emoji_message.delete()
