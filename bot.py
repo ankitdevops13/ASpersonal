@@ -259,7 +259,10 @@ def download_adda247_video(url, access_token, name):
 
 
 async def adda247_video(url, access_token, name):
-    
+    if "/demo" in url:
+        url = url.replace("/demo", "")
+        print(url)
+
     if not url or not access_token:
         return None
 
@@ -345,13 +348,11 @@ async def adda247_video(url, access_token, name):
         return None
 
 async def adda247_pdf(url, access_token, name):
-    
     if not url or not access_token:
-        return None
+        return None  # False ki jagah None
 
     output_path = f"{name}.pdf"
 
-    # Build curl command
     cmd = [
         'curl', '-s', '-L', '-k',
         '-H', 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
@@ -364,21 +365,21 @@ async def adda247_pdf(url, access_token, name):
         url
     ]
 
-    # Run curl asynchronously
     process = await asyncio.create_subprocess_exec(
         *cmd,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE
     )
-    stdout, stderr = await process.communicate()
+    await process.communicate()
 
     # Check if file downloaded successfully
     if process.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1000:
-        return True
+        return output_path  # ✅ Return file path
     else:
         if os.path.exists(output_path):
             os.remove(output_path)
-        return None
+        return None  # ✅ Return None on fail
+        
 
 
 async def get_signed_videourl(url, access_token):
