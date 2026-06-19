@@ -259,7 +259,7 @@ def adda247_video(url, access_token, name):
 
 
 
-async def adda247_pdf(url, access_token, name) -> bool:
+async def adda247_pdf(url, access_token, name):
     
     if not url or not access_token:
         return False
