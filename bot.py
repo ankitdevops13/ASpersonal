@@ -882,7 +882,7 @@ async def upload(bot: Client, m: Message):
                     try:
                         await asyncio.sleep(2)
                         
-                        downloaded_pdf = await add247_pdf(url, access_token, name)
+                        downloaded_pdf = await adda247_pdf(url, access_token, name)
                         if downloaded_pdf and os.path.exists(downloaded_pdf):
                             copy = await bot.send_document(
                                 chat_id=m.chat.id,
