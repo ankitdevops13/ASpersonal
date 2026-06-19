@@ -256,33 +256,39 @@ def adda247_video(url, access_token, name):
     return True
 
 
-def adda247_pdf(url, access_token, name):
+
+
+
+async def adda247_pdf(url, access_token, name) -> bool:
     
-    # Safety check
     if not url or not access_token:
         return False
 
-    # Output path
     output_path = f"{name}.pdf"
 
-    # Build the curl command (COOKIES REMOVED, ONLY JWT TOKEN)
+    # Build curl command
     cmd = [
         'curl', '-s', '-L', '-k',
-        '-H', f'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
+        '-H', 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
         '-H', 'Accept: application/pdf,text/html,application/xhtml+xml,application/xml;q=0.9',
         '-H', 'Accept-Language: en-US,en;q=0.9',
         '-H', 'Referer: https://www.adda247.com/',
         '-H', 'Origin: https://www.adda247.com',
-        '-H', f'x-jwt-token: {access_token}',  # Sirf token hai yahan
+        '-H', f'x-jwt-token: {access_token}',
         '-o', output_path,
-        url
+        pdf_url
     ]
 
-    # Execute download
-    result = subprocess.run(cmd)
-    
-    # Check if file downloaded successfully (size > 1KB)
-    if result.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1000:
+    # Run curl asynchronously
+    process = await asyncio.create_subprocess_exec(
+        *cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE
+    )
+    stdout, stderr = await process.communicate()
+
+    # Check if file downloaded successfully
+    if process.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1000:
         return True
     else:
         if os.path.exists(output_path):
