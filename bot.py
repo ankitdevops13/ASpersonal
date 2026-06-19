@@ -347,7 +347,7 @@ async def adda247_video(url, access_token, name):
 async def adda247_pdf(url, access_token, name):
     
     if not url or not access_token:
-        return False
+        return None
 
     output_path = f"{name}.pdf"
 
@@ -378,7 +378,7 @@ async def adda247_pdf(url, access_token, name):
     else:
         if os.path.exists(output_path):
             os.remove(output_path)
-        return False
+        return None
 
 
 async def get_signed_videourl(url, access_token):
@@ -897,12 +897,7 @@ async def upload(bot: Client, m: Message):
                 url = pw_player(url)
                 print("PW Player URL:", url)
 
-            elif "videotest.adda247.com" in url:
-                if "/demo" in url:
-                    clean_url = url.replace("/demo", "")
-                    url = clean_url
-                    success = adda247_video(url, access_token, name)
-                    print("Adda247:", success)
+            
                 
             elif '/master.mpd' in url or "d1d34p8vz63oiq.cloudfront.net" in url or "parentId=" in url or "childId=" in url:
                 video_url = await get_signed_videourl(url, access_token)
@@ -973,11 +968,14 @@ async def upload(bot: Client, m: Message):
                     try:
                         await asyncio.sleep(2)
                         
+                        # ✅ Ab yeh True nahi, file path ya None return karega
                         downloaded_pdf = await adda247_pdf(url, access_token, name)
+                        
+                        # ✅ Check: Agar path hai aur file exist karti hai
                         if downloaded_pdf and os.path.exists(downloaded_pdf):
                             copy = await bot.send_document(
                                 chat_id=m.chat.id,
-                                document=downloaded_pdf,
+                                document=downloaded_pdf,  # ✅ Ab valid path hai
                                 caption=cc1
                             )
                             count += 1
@@ -991,6 +989,7 @@ async def upload(bot: Client, m: Message):
                         continue
                     except Exception as e:
                         await m.reply_text(f"⚠️ PDF Download Error: {str(e)}")
+                        
                         
                 elif ".pdf?" in url or ".pdf?URLPrefix=" in url:
                     try:
