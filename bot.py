@@ -193,64 +193,102 @@ def pw_player(url):
     encoded = urllib.parse.quote(decoded, safe="")
     return PLAYER_BASE + encoded
 
-def extract_ids_from_url(url: str):
-    parent_id = None
-    child_id = None
-    parent_match = re.search(r'parentId=([a-f0-9]+)', url)
-    if parent_match:
-        parent_id = parent_match.group(1)
-    child_match = re.search(r'childId=([a-f0-9]+)', url)
-    if child_match:
-        child_id = child_match.group(1)
-    return parent_id, child_id
 
-def clean_video_url(url):
-    path = urlparse(url).path
-    video_id = path.split("/")[-2]
-    return f"https://sec-prod-mediacdn.pw.live/{video_id}/master.m3u8"
+def adda247_video(url, access_token, name):
+    # Safety check
+    if not url or not access_token:
+        return False
 
-async def get_signed_video_url(access_token: str, parent_id: str, child_id: str):
-    if not access_token.startswith("Bearer "):
-        access_token = f"Bearer {access_token}"
-    headers = {
-        'Host': 'api.penpencil.co',
-        'Authorization': access_token,
-        'Client-Id': '5eb393ee95fab7468a79d189',
-        'Client-Type': 'WEB',
-        'Client-Version': '200',
-        'Randomid': '8ffa361e-4cc7-4948-89e8-72e552ac5460',
-        'Devicetype': 'mobile',
-        'Networktype': '3g',
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36',
-        'Accept': '*/*',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Origin': 'https://www.pw.live',
-        'Referer': 'https://www.pw.live/',
-        'X-Sdk-Version': '0.0.20'
-    }
-    signing_url = (
-        f"https://api.penpencil.co/v1/videos/video-url-details"
-        f"?type=BATCHES&videoContainerType=DASH&reqType=query"
-        f"&childId={child_id}&parentId={parent_id}&clientVersion=201"
-    )
-    async with aiohttp.ClientSession() as session:
-        try:
-            async with session.get(signing_url, headers=headers) as response:
-                if response.status == 200:
-                    res_json = await response.json()
-                    data_obj = res_json.get("data", {})
-                    signed_url = data_obj.get("link") or data_obj.get("videoUrl") or data_obj.get("signedUrl")
-                    if signed_url:
-                        if signed_url.startswith("?"):
-                            return signed_url
-                        return signed_url
-                    else:
-                        return None
-                else:
-                    return None
-        except Exception:
-            return None
+    # Output file path using the 'name' variable
+    output_path = f"{name}.mp4"
+
+    # Helper function for curl
+    def download_with_token(url, output_file):
+        cmd = [
+            'curl', '-s', '-L', '-k',
+            '-H', 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
+            '-H', 'Accept: */*',
+            '-H', 'Referer: https://www.adda247.com/',
+            '-H', 'Origin: https://www.adda247.com',
+            '-H', f'x-jwt-token: {access_token}',  # Using access_token variable
+            '-o', output_file,
+            url
+        ]
+        result = subprocess.run(cmd)
+        return result.returncode == 0
+
+    # 1. Download M3U8
+    os.system("rm -f cache_playlist.m3u8")
+    if not download_with_token(url, "cache_playlist.m3u8"):
+        return False
+
+    if not os.path.exists("cache_playlist.m3u8") or os.path.getsize("cache_playlist.m3u8") < 100:
+        os.remove("cache_playlist.m3u8")
+        return False
+
+    # 2. Parse segments
+    with open("cache_playlist.m3u8", "r", encoding="utf-8") as f:
+        lines = [line.strip() for line in f.readlines() if line.strip()]
+
+    base_url = url.rsplit('/', 1)[0] + '/'
+    segments = []
+    for line in lines:
+        if line.startswith('http') and '.ts' in line:
+            segments.append(line)
+        elif not line.startswith('#') and line.endswith('.ts'):
+            segments.append(base_url + line)
+
+    if not segments:
+        os.remove("cache_playlist.m3u8")
+        return False
+
+    # 3. Download chunks
+    os.system("rm -f raw_chunk_*.ts")
+    for idx, chunk_url in enumerate(segments, 1):
+        temp_chunk_name = f"raw_chunk_{idx:05d}.ts"
+        if not download_with_token(chunk_url, temp_chunk_name):
+            os.system("rm -f raw_chunk_*.ts cache_playlist.m3u8")
+            return False
+
+    # 4. Combine and clean up
+    os.system(f"cat raw_chunk_*.ts > \"{output_path}\"")
+    os.system("rm -f raw_chunk_*.ts cache_playlist.m3u8")
+    return True
+
+
+def adda247_pdf(url, access_token, name):
+    
+    # Safety check
+    if not url or not access_token:
+        return False
+
+    # Output path
+    output_path = f"{save_name}.pdf"
+
+    # Build the curl command (COOKIES REMOVED, ONLY JWT TOKEN)
+    cmd = [
+        'curl', '-s', '-L', '-k',
+        '-H', f'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
+        '-H', 'Accept: application/pdf,text/html,application/xhtml+xml,application/xml;q=0.9',
+        '-H', 'Accept-Language: en-US,en;q=0.9',
+        '-H', 'Referer: https://www.adda247.com/',
+        '-H', 'Origin: https://www.adda247.com',
+        '-H', f'x-jwt-token: {access_token}',  # Sirf token hai yahan
+        '-o', output_path,
+        url
+    ]
+
+    # Execute download
+    result = subprocess.run(cmd)
+    
+    # Check if file downloaded successfully (size > 1KB)
+    if result.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1000:
+        return True
+    else:
+        if os.path.exists(output_path):
+            os.remove(output_path)
+        return False
+
 
 async def get_signed_videourl(url, access_token):
     vid_id = url.split("/")[-2]
@@ -767,12 +805,21 @@ async def upload(bot: Client, m: Message):
                 wake_player()
                 url = pw_player(url)
                 print("PW Player URL:", url)
+
+            elif "videotest.adda247.com" in url:
+                if "/demo" in url:
+                    clean_url = url.replace("/demo", "")
+                    url = clean_url
+                    success = adda247_video(url, access_token, name)
+                    print("Adda247:", success)
+                
             elif '/master.mpd' in url or "d1d34p8vz63oiq.cloudfront.net" in url or "parentId=" in url or "childId=" in url:
                 video_url = await get_signed_videourl(url, access_token)
                 print("PW Signed Url:", video_url)
                 encoded_url = urllib.parse.quote(video_url, safe="")
                 wake_player()
                 url = f"https://learnwithpw-recorded.onrender.com/play?v={encoded_url}"
+                
             elif 'content.allen.in' in url:
                 url = convert_url(url, 'dash')
                 fallback_url = convert_url(url, 'm3u8')
@@ -831,6 +878,29 @@ async def upload(bot: Client, m: Message):
                         count += 1
                         continue
 
+                elif ".doc" in url:
+                    try:
+                        await asyncio.sleep(2)
+                        
+                        downloaded_pdf = await add247_pdf(url, access_token, name)
+                        if downloaded_pdf and os.path.exists(downloaded_pdf):
+                            copy = await bot.send_document(
+                                chat_id=m.chat.id,
+                                document=downloaded_pdf,
+                                caption=cc1
+                            )
+                            count += 1
+                            os.remove(downloaded_pdf)
+                            print(f"[Bot Success] Successfully uploaded bypassed PDF: {downloaded_pdf}", flush=True)
+                        else:
+                            await m.reply_text(f"❌ Adda247 PDF download fail.")
+                    except FloodWait as e:
+                        await m.reply_text(str(e))
+                        await asyncio.sleep(e.x)
+                        continue
+                    except Exception as e:
+                        await m.reply_text(f"⚠️ PDF Download Error: {str(e)}")
+                        
                 elif ".pdf?" in url or ".pdf?URLPrefix=" in url:
                     try:
                         await asyncio.sleep(2)
