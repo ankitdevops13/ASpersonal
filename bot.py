@@ -263,7 +263,7 @@ def adda247_pdf(url, access_token, name):
         return False
 
     # Output path
-    output_path = f"{save_name}.pdf"
+    output_path = f"{name}.pdf"
 
     # Build the curl command (COOKIES REMOVED, ONLY JWT TOKEN)
     cmd = [
