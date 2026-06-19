@@ -276,7 +276,7 @@ async def adda247_pdf(url, access_token, name) -> bool:
         '-H', 'Origin: https://www.adda247.com',
         '-H', f'x-jwt-token: {access_token}',
         '-o', output_path,
-        pdf_url
+        url
     ]
 
     # Run curl asynchronously
