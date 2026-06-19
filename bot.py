@@ -512,23 +512,35 @@ BOT_ID = None
 BOT_NAME = None
 
 # ==================== INLINE KEYBOARD ====================
-keyboard = InlineKeyboardMarkup(
-    [
-        [InlineKeyboardButton("🇮🇳ʙᴏᴛ ᴍᴀᴅᴇ ʙʏ🇮🇳", url=f"https://t.me/jaat_mk")],
+@bot.on_message(filters.command("start"))
+async def start_command(bot: Client, message):
+    user = await bot.get_chat(message.from_user.id)
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🇮🇳ʙᴏᴛ ᴍᴀᴅᴇ ʙʏ🇮🇳", url="https://t.me/jaat_mk")],
         [InlineKeyboardButton("🔔ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ🔔", url="https://t.me/inventor_king_24")],
         [InlineKeyboardButton("🦋ғᴏʟʟᴏᴡ ᴜs🦋", url="https://t.me/inventor_king_24")]
-    ]
-)
+    ])
 
-image_urls = ["https://files.catbox.moe/k3qs5r.jpg"]
-random_image_url = random.choice(image_urls)
-caption = (
-    "**ʜᴇʟʟᴏ👋**\n\n"
-    "➠ **ɪ ᴀᴍ ᴛxᴛ ᴛᴏ ᴠɪᴅᴇᴏ ᴜᴘʟᴏᴀᴅᴇʀ ʙᴏᴛ.**\n"
-    "➠ **ғᴏʀ ᴜsᴇ ᴍᴇ sᴇɴᴅ /txt.**\n"
-    "➠ **ғᴏʀ ɢᴜɪᴅᴇ sᴇɴᴅ /help.**"
-)
+    caption = (
+        f"**ʜᴇʟʟᴏ 👋 {message.from_user.mention}**\n\n"
+        "➠ **ɪ ᴀᴍ ᴛxᴛ ᴛᴏ ᴠɪᴅᴇᴏ ᴜᴘʟᴏᴀᴅᴇʀ ʙᴏᴛ.**\n"
+        "➠ **ғᴏʀ ᴜsᴇ ᴍᴇ sᴇɴᴅ /txt.**\n"
+        "➠ **ғᴏʀ ɢᴜɪᴅᴇ sᴇɴᴅ /help.**"
+    )
 
+    if user.photo:
+        photo = await bot.download_media(user.photo.big_file_id)
+        await message.reply_photo(
+            photo=photo,
+            caption=caption,
+            reply_markup=keyboard
+        )
+    else:
+        await message.reply_text(
+            caption,
+            reply_markup=keyboard
+        )
 # ==================== COMMAND HANDLERS ====================
 @bot.on_message(filters.command(["start"]))
 async def start_command(bot: Client, message: Message):
