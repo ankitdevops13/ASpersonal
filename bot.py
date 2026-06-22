@@ -458,8 +458,13 @@ async def signed_videoxxxxx(access_token, parent_id, child_id):
 
             return base_url
 
+
+
+import re
 import aiohttp
 import json
+from urllib.parse import urlparse, parse_qs
+
 
 async def signed_videox(access_token, parent_id, child_id):
 
@@ -538,8 +543,6 @@ async def signed_videox(access_token, parent_id, child_id):
 
 
 
-from urllib.parse import urlparse, parse_qs
-import re
 
 def pwextract_ids(url):
     try:
