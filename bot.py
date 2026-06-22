@@ -638,6 +638,48 @@ async def ankit_video_url(url, access_token):
             return None
 
 
+async def ankit_videodl(url, name):
+    try:
+        # M3U8 / MPD
+        if ".m3u8" in url or ".mpd" in url:
+            cmd = [
+                "ffmpeg",
+                "-i", url,
+                "-c", "copy",
+                "-y",
+                name
+            ]
+
+        # Direct MP4
+        elif ".mp4" in url:
+            cmd = [
+                "aria2c",
+                "-x16",
+                "-s16",
+                "-k1M",
+                "-o", name,
+                url
+            ]
+
+        # Other sites (YouTube, JWPlayer, etc.)
+        else:
+            cmd = [
+                "yt-dlp",
+                "--external-downloader", "aria2c",
+                "--external-downloader-args", "-x 16 -s 16 -k 1M",
+                "-o", name,
+                url
+            ]
+
+        print(" ".join(cmd))
+        result = subprocess.run(cmd)
+
+        return result.returncode == 0 and os.path.exists(name)
+
+    except Exception as e:
+        print(f"Download Error: {e}")
+        return False
+
 async def get_credit_name(bot, m, editable, user_id, user_first_name, user_username, user_mention):
     owner_credit = f"𝐀𝐧𝐤𝐢𝐭 𝐒𝐡𝐚𝐤𝐲𝐚™🇮🇳"
     credit_options = (
@@ -1129,7 +1171,9 @@ async def upload(bot: Client, m: Message):
                     vid_url = vid_url.replace("/master.mpd", "/master.m3u8")
                     print("PW Signed Url:", vid_url)
                     wake_player()
-                url = f"https://learnwithpw-recorded.onrender.com/play?v={vid_url}"
+
+                video_url = urllib.parse.quote(vid_url, safe="")
+                url = f"https://learnwithpw-recorded.onrender.com/play?v={video_url}"
                 
             elif 'content.allen.in' in url:
                 url = convert_url(url, 'dash')
@@ -1372,6 +1416,22 @@ async def upload(bot: Client, m: Message):
                     Show = f"<pre><code>𝐀𝐩𝐩𝐱</code></pre>\n\n🚀 𝐏𝐑𝐎𝐆𝐑𝐄𝐒𝐒...» {progress:.2f}%\n\n📥 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃 🚀.. »\n\n├──🎞️ 📊 Total Links = {len(links)}\n\n├──🎞️ ⚡️ Currently On = {str(count).zfill(3)}\n\n├──⏳ Remaining URL = {remaining_links}\n\n├──🎞️ Title:- {name}\n\n├──⌨️ Resolution » {raw_text2}\n\n├──🖼️ Thumbnail » {raw_text6}\n\n├── Url: [{url}]\n\n├──🤖 Bot Made By: 『ᴀɴᴋɪᴛ sʜᴀᴋʏᴀ』"
                     prog = await m.reply_text(Show)
                     res_file = await download_secure_video(url, name)
+                    filename = res_file
+                    await prog.delete(True)
+                    await emoji_message.delete()
+                    await helper.send_vid(bot, m, cc, filename, thumb, name, prog)
+                    count += 1
+                    time.sleep(1)
+                    continue
+
+                elif "pw.live" in url.lower() or "master.m3u8" in url.lower():
+                    remaining_links = len(links) - count
+                    progress = (count / len(links)) * 100
+                    site_name = extract_site_name(url)
+                    emoji_message = await show_random_emojis(message)
+                    Show = f"<pre><code>{site_name}</code></pre>\n\n🚀 𝐏𝐑𝐎𝐆𝐑𝐄𝐒𝐒...» {progress:.2f}%\n\n📥 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃 🚀.. »\n\n├──🎞️ 📊 Total Links = {len(links)}\n\n├──🎞️ ⚡️ Currently On = {str(count).zfill(3)}\n\n├──⏳ Remaining URL = {remaining_links}\n\n├──🎞️ Title:- {name}\n\n├──⌨️ Resolution » {raw_text2}\n\n├──🖼️ Thumbnail » {raw_text6}\n\n├── Url: [{url}]\n\n├──🤖 Bot Made By: 『ᴀɴᴋɪᴛ sʜᴀᴋʏᴀ』"
+                    prog = await m.reply_text(Show)
+                    res_file = await ankit_videodl(url, name)
                     filename = res_file
                     await prog.delete(True)
                     await emoji_message.delete()
