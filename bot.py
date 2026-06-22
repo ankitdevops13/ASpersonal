@@ -1007,7 +1007,9 @@ async def upload(bot: Client, m: Message):
             
                 
             elif '/master.mpd' in url or "d1d34p8vz63oiq.cloudfront.net" in url or "parentId=" in url or "childId=" in url:
-                parent_id, child_id = pwextract_ids(url)
+                parent_id, child_id = extract_id_url(url)
+                print(parent_id)
+                print(child_id)
                 vid_url = await signed_videox(access_token, parent_id, child_id)
                 if vid_url:
                     vid_url = vid_url.replace("/master.mpd", "/master.m3u8")
