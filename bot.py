@@ -915,10 +915,8 @@ async def upload(bot: Client, m: Message):
             elif '/master.mpd' in url or "d1d34p8vz63oiq.cloudfront.net" in url or "parentId=" in url or "childId=" in url:
                 video_url = await get_signed_videourl(url, access_token)
                 print("PW Signed Url:", video_url)
-                encoded_url = quote(video_url, safe="")
-                print(encoded_url)
                 wake_player()
-                url = f"https://learnwithpw-recorded.onrender.com/play?v={encoded_url}"
+                url = f"https://learnwithpw-recorded.onrender.com/play?v={video_url}"
                 
             elif 'content.allen.in' in url:
                 url = convert_url(url, 'dash')
