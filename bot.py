@@ -401,7 +401,7 @@ def extract_id_url(url):
     return parent_id, child_id
     
 
-async def signed_videox(access_token, parent_id, child_id):
+async def signed_videoxxxxx(access_token, parent_id, child_id):
     if not access_token.startswith("Bearer "):
         access_token = f"Bearer {access_token}"
 
@@ -458,17 +458,115 @@ async def signed_videox(access_token, parent_id, child_id):
 
             return base_url
 
+import aiohttp
+import json
 
+async def signed_videox(access_token, parent_id, child_id):
+
+    if not access_token.startswith("Bearer "):
+        access_token = f"Bearer {access_token}"
+
+    headers = {
+        "Host": "api.penpencil.co",
+        "Authorization": access_token,
+        "Client-Id": "5eb393ee95fab7468a79d189",
+        "Client-Type": "WEB",
+        "Client-Version": "200",
+        "Randomid": "becda3bb-3759-4a7a-a75a-129010ce2067",
+        "Devicetype": "mobile",
+        "Networktype": "4g",
+        "Origin": "https://www.pw.live",
+        "Referer": "https://www.pw.live/",
+        "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36",
+        "Accept": "*/*",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept-Language": "en-US,en;q=0.9",
+        "X-Sdk-Version": "0.0.20"
+    }
+
+    api_url = (
+        "https://api.penpencil.co/v1/videos/video-url-details"
+        f"?type=BATCHES"
+        f"&videoContainerType=DASH"
+        f"&reqType=query"
+        f"&childId={child_id}"
+        f"&parentId={parent_id}"
+        f"&clientVersion=201"
+    )
+
+    print("\n" + "=" * 80)
+    print("API URL:")
+    print(api_url)
+    print("=" * 80)
+
+    try:
+        async with aiohttp.ClientSession() as session:
+
+            async with session.get(api_url, headers=headers) as resp:
+
+                print("STATUS:", resp.status)
+
+                raw_text = await resp.text()
+
+                print("\nRAW RESPONSE:")
+                print(raw_text[:3000])
+
+                if resp.status != 200:
+                    return None
+
+                try:
+                    data = json.loads(raw_text)
+                except Exception as e:
+                    print("JSON ERROR:", e)
+                    return None
+
+                print("\nFULL JSON:")
+                print(json.dumps(data, indent=2)[:5000])
+
+                if not data.get("success"):
+                    print("API success=False")
+                    return None
+
+                video_data = data.get("data", {})
+
+                print("\nVIDEO DATA:")
+                print(video_data)
+
+                base_url = (
+                    video_data.get("url")
+
+
+
+import re
+from urllib.parse import urlparse, parse_qs
 def pwextract_ids(url):
-    parent_match = re.search(r'parentId=([a-zA-Z0-9]+)', url)
-    child_match = re.search(r'childId=([a-zA-Z0-9]+)', url)
+    try:
+        parsed = urlparse(url)
 
-    parent_id = parent_match.group(1) if parent_match else None
-    child_id = child_match.group(1) if child_match else None
+        # Query params se extract
+        qs = parse_qs(parsed.query)
 
-    return parent_id, child_id
+        parent_id = qs.get("parentId", [None])[0]
+        child_id = qs.get("childId", [None])[0]
 
-    
+        # Agar query me na mile to regex fallback
+        if not parent_id:
+            m = re.search(r'parentId=([^&]+)', url)
+            parent_id = m.group(1) if m else None
+
+        if not child_id:
+            m = re.search(r'childId=([^&]+)', url)
+            child_id = m.group(1) if m else None
+
+        print(f"[PW] Parent ID: {parent_id}")
+        print(f"[PW] Child ID : {child_id}")
+
+        return parent_id, child_id
+
+    except Exception as e:
+        print(f"[PW] Extract Error: {e}")
+        return None, None
+
 
 async def ankit_video_url(url, access_token):
     
@@ -1008,13 +1106,16 @@ async def upload(bot: Client, m: Message):
                 
             elif '/master.mpd' in url or "d1d34p8vz63oiq.cloudfront.net" in url or "parentId=" in url or "childId=" in url:
                 parent_id, child_id = extract_id_url(url)
-                print(parent_id)
-                print(child_id)
+                if not parent_id or not child_id:
+                    print("❌ parentId/childId not found")
+                    print("Url:" url)
+                    return 
+                    
                 vid_url = await signed_videox(access_token, parent_id, child_id)
                 if vid_url:
                     vid_url = vid_url.replace("/master.mpd", "/master.m3u8")
-                print("PW Signed Url:", vid_url)
-                wake_player()
+                    print("PW Signed Url:", vid_url)
+                    wake_player()
                 url = f"https://learnwithpw-recorded.onrender.com/play?v={vid_url}"
                 
             elif 'content.allen.in' in url:
