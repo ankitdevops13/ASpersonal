@@ -460,14 +460,14 @@ async def signed_videoxxxxx(access_token, parent_id, child_id):
 
 
 
+
+import json
 import re
 import aiohttp
-import json
+import asyncio
 from urllib.parse import urlparse, parse_qs
 
-
 async def signed_videox(access_token, parent_id, child_id):
-
     if not access_token.startswith("Bearer "):
         access_token = f"Bearer {access_token}"
 
@@ -506,11 +506,8 @@ async def signed_videox(access_token, parent_id, child_id):
 
     try:
         async with aiohttp.ClientSession() as session:
-
             async with session.get(api_url, headers=headers) as resp:
-
                 print("STATUS:", resp.status)
-
                 raw_text = await resp.text()
 
                 print("\nRAW RESPONSE:")
@@ -533,22 +530,22 @@ async def signed_videox(access_token, parent_id, child_id):
                     return None
 
                 video_data = data.get("data", {})
-
                 print("\nVIDEO DATA:")
                 print(video_data)
 
-                base_url = (video_data.get("url"))
+                base_url = video_data.get("url")
+                
+                # ✅ FIX: Return karna zaroori hai
+                return base_url
 
-
-
-
+    except Exception as e:
+        print(f"Request Error: {e}")
+        return None
 
 
 def pwextract_ids(url):
     try:
         parsed = urlparse(url)
-
-        # Query params se extract
         qs = parse_qs(parsed.query)
 
         parent_id = qs.get("parentId", [None])[0]
