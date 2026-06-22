@@ -380,7 +380,58 @@ async def adda247_pdf(url, access_token, name):
             os.remove(output_path)
         return None  # ✅ Return None on fail
         
+async def get_signed_video_url_short(url, access_token):
+    """Force HLS routing engine to extract valid missing URLPrefix & Signature blocks"""
+    parent_id = url.split("parentId=")[1].split("&")[0]
+    child_id = url.split("childId=")[1]
+    if "d1d34p8vz63oiq.cloudfront.net" in url:
+        url = url.replace("d1d34p8vz63oiq.cloudfront.net", "sec-prod-mediacdn.pw.live")
+        
+    if not access_token or not parent_id or not child_id:
+        return None
 
+    headers = {
+        'Host': 'api.penpencil.co',
+        'Authorization': access_token if access_token.startswith("Bearer ") else f"Bearer {access_token}",
+        'Client-Id': '5eb393ee95fab7468a79d189',
+        'Client-Type': 'WEB',
+        'Client-Version': '200',
+        'Randomid': 'c2bb242f-5411-418f-90e8-b12f43e12b05',
+        'Devicetype': 'mobile',
+        'Networktype': '4g',
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36',
+        'Origin': 'https://www.pw.live',
+        'Referer': 'https://www.pw.live/',
+        'X-Sdk-Version': '0.0.20'
+    }
+
+    # 🚀 CHANGED: videoContainerType ko DASH se badal kar HLS kiya aur clientVersion ko strict bind kiya
+    url = f"https://api.penpencil.co/v1/videos/video-url-details?type=BATCHES&videoContainerType=HLS&reqType=query&childId={child_id}&parentId={parent_id}&clientVersion=200"
+
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(url, headers=headers, timeout=15) as resp:
+                if resp.status != 200:
+                    print(f"❌ API Rejected Status: {resp.status}")
+                    return None
+                
+                res = await resp.json()
+                data = res.get("data", {})
+                
+                # 🌟 Smart Scrubber Layer: Priority given to explicit params strings
+                signed_url = data_obj.get("link") or data_obj.get("videoUrl") or data_obj.get("signedUrl")
+            
+                
+                if signed:
+                    return str(signed).strip().replace('\\', '')
+                else:
+                    # Debug print to trace structure changes if any
+                    print(f"⚠️ Response structure found: {list(data.keys())}")
+                    return None
+        except Exception as e:
+            print(f"❌ Handshake Error: {e}")
+            return None
+    
 
 async def get_signed_videourl(url, access_token):
     vid_id = url.split("/")[-2]
@@ -970,7 +1021,7 @@ async def upload(bot: Client, m: Message):
             
                 
             elif '/master.mpd' in url or "d1d34p8vz63oiq.cloudfront.net" in url or "parentId=" in url or "childId=" in url:
-                video_url = await ankit_video_url(url, access_token)
+                video_url = await get_signed_video_url_short(url, access_token)
                 print("PW Signed Url:", video_url)
                 wake_player()
                 url = f"https://learnwithpw-recorded.onrender.com/play?v={video_url}"
