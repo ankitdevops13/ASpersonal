@@ -380,7 +380,7 @@ async def adda247_pdf(url, access_token, name):
             os.remove(output_path)
         return None  # ✅ Return None on fail
         
-def extract_id_url(url)
+def extract_id_url(url):
     """Extract parentId and childId from URL"""
     parent_id = None
     child_id = None
