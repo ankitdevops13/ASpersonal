@@ -1039,7 +1039,7 @@ async def upload(bot: Client, m: Message):
             
                 
             elif '/master.mpd' in url or "d1d34p8vz63oiq.cloudfront.net" in url or "parentId=" in url or "childId=" in url:
-                video_url = await ankit_signed_videot(url, access_token)
+                video_url = await ankit_signed_video(url, access_token)
                 print("PW Signed Url:", video_url)
                 wake_player()
                 url = f"https://learnwithpw-recorded.onrender.com/play?v={video_url}"
