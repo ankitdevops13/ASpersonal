@@ -400,10 +400,8 @@ def extract_id_url(url):
     
     return parent_id, child_id
     
-async def ankit_signed_video(url, access_token):
-    parent_id, child_id = extract_id_url(url)
-    print("Parent Id:", parent_id)
-    print("Child Id:", child_id)
+
+async def signed_videox(access_token, parent_id, child_id):
     if not access_token.startswith("Bearer "):
         access_token = f"Bearer {access_token}"
 
@@ -412,96 +410,63 @@ async def ankit_signed_video(url, access_token):
         'Authorization': access_token,
         'Client-Id': '5eb393ee95fab7468a79d189',
         'Client-Type': 'WEB',
-        'Client-Version': '200',
-        'Randomid': '8ffa361e-4cc7-4948-89e8-72e552ac5460',
-        'Devicetype': 'mobile',
-        'Networktype': '3g',
+        'Client-Version': '1.0.0',
+        'Content-Type': 'application/json',
+        'Randomid': 'becda3bb-3759-4a7a-a75a-129010ce2067',
+        'Origin': 'https://www.pw.live',
+        'Referer': 'https://www.pw.live/',
         'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36',
-        'Accept': '*/*',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Origin': 'https://www.pw.live',
-        'Referer': 'https://www.pw.live/',
         'X-Sdk-Version': '0.0.20'
     }
 
-    signing_url = (
-        f"https://api.penpencil.co/v1/videos/video-url-details"
-        f"?type=BATCHES&videoContainerType=DASH&reqType=query"
-        f"&childId={child_id}&parentId={parent_id}&clientVersion=201"
+    api_url = (
+        "https://api.penpencil.co/v1/videos/video-url-details"
+        f"?type=BATCHES"
+        f"&videoContainerType=DASH"
+        f"&reqType=query"
+        f"&childId={child_id}"
+        f"&parentId={parent_id}"
+        f"&clientVersion=201"
     )
 
     async with aiohttp.ClientSession() as session:
-        try:
-            async with session.get(signing_url, headers=headers) as response:
-                if response.status == 200:
-                    res_json = await response.json()
-                    data_obj = res_json.get("data", {})
+        async with session.get(api_url, headers=headers) as resp:
 
-                    signed_url = data_obj.get("link") or data_obj.get("videoUrl") or data_obj.get("signedUrl")
+            print(f"\n[+] Status Code: {resp.status}")
 
-                    if signed_url:
-                        # If signed_url is just query parameters, append to base MPD URL
-                        if signed_url.startswith("?"):
-                            return signed_url  # Return only the query parameters
-                        return signed_url
-                    else:
-                        return None
-                else:
-                    return None
-        except Exception as e:
-            return None
+            if resp.status != 200:
+                print(await resp.text())
+                return None
 
-async def get_signed_videourl(url, access_token):
-    vid_id = url.split("/")[-2]
-    parent_id = url.split("parentId=")[1].split("&")[0]
-    child_id = url.split("childId=")[1]
-    if "d1d34p8vz63oiq.cloudfront.net" in url:
-        url = url.replace("d1d34p8vz63oiq.cloudfront.net", "sec-prod-mediacdn.pw.live")
-    if not access_token.startswith("Bearer "):
-        access_token = f"Bearer {access_token}"
-    headers = {
-        'Host': 'api.penpencil.co',
-        'Authorization': access_token,
-        'Client-Id': '5eb393ee95fab7468a79d189',
-        'Client-Type': 'WEB',
-        'Client-Version': '200',
-        'Randomid': '8ffa361e-4cc7-4948-89e8-72e552ac5460',
-        'Devicetype': 'mobile',
-        'Networktype': '3g',
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko)',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Origin': 'https://www.pw.live',
-        'Referer': 'https://www.pw.live/',
-        'X-Sdk-Version': '0.0.20'
-    }
-    signing_url = (
-        f"https://api.penpencil.co/v1/videos/video-url-details"
-        f"?type=BATCHES&videoContainerType=DASH&reqType=query"
-        f"&childId={child_id}&parentId={parent_id}&clientVersion=201"
-    )
-    async with aiohttp.ClientSession() as session:
-        try:
-            async with session.get(signing_url, headers=headers) as response:
-                if response.status == 200:
-                    res_json = await response.json()
-                    data_obj = res_json.get("data", {})
-                    signed_url = data_obj.get("link") or data_obj.get("videoUrl") or data_obj.get("signedUrl")
-                    if signed_url:
-                        if signed_url.startswith("?"):
-                            clean_base = url.split("?")[0].split("&")[0]
-                            if "master.mpd" in clean_base:
-                                clean_base = clean_base.replace("master.mpd", "master.m3u8")
-                            signed_url = clean_base + signed_url
-                        return signed_url
-                    else:
-                        return None
-                else:
-                    return None
-        except Exception as e:
-            return None
+            data = await resp.json()
 
+            if not data.get("success"):
+                print(data)
+                return None
+
+            video_data = data.get("data", {})
+
+            base_url = video_data.get("url")
+            signed_part = video_data.get("signedUrl")
+
+            if not base_url:
+                print("[-] Base URL not found")
+                return None
+
+            if signed_part:
+                return base_url + signed_part
+
+            return base_url
+
+
+def pwextract_ids(url):
+    parent_match = re.search(r'parentId=([a-zA-Z0-9]+)', url)
+    child_match = re.search(r'childId=([a-zA-Z0-9]+)', url)
+
+    parent_id = parent_match.group(1) if parent_match else None
+    child_id = child_match.group(1) if child_match else None
+
+    return parent_id, child_id
 
     
 
@@ -1042,10 +1007,13 @@ async def upload(bot: Client, m: Message):
             
                 
             elif '/master.mpd' in url or "d1d34p8vz63oiq.cloudfront.net" in url or "parentId=" in url or "childId=" in url:
-                video_url = await ankit_signed_video(url, access_token)
-                print("PW Signed Url:", video_url)
+                parent_id, child_id = pwextract_ids(url)
+                vid_url = await signed_videox(access_token, parent_id, child_id)
+                if vid_url:
+                    vid_url = vid_url.replace("/master.mpd", "/master.m3u8")
+                print("PW Signed Url:", vid_url)
                 wake_player()
-                url = f"https://learnwithpw-recorded.onrender.com/play?v={video_url}"
+                url = f"https://learnwithpw-recorded.onrender.com/play?v={vid_url}"
                 
             elif 'content.allen.in' in url:
                 url = convert_url(url, 'dash')
