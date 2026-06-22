@@ -532,8 +532,7 @@ async def signed_videox(access_token, parent_id, child_id):
                 print("\nVIDEO DATA:")
                 print(video_data)
 
-                base_url = (
-                    video_data.get("url")
+                base_url = (video_data.get("url"))
 
 
 
