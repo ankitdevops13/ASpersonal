@@ -379,7 +379,10 @@ async def adda247_pdf(url, access_token, name):
         if os.path.exists(output_path):
             os.remove(output_path)
         return None  # ✅ Return None on fail
-        
+
+
+import re
+
 def extract_id_url(url):
     """Extract parentId and childId from URL"""
     parent_id = None
