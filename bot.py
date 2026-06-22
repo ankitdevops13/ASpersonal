@@ -533,11 +533,23 @@ async def signed_videox(access_token, parent_id, child_id):
                 print("\nVIDEO DATA:")
                 print(video_data)
 
-                base_url = video_data.get("url")
-                
-                # ✅ FIX: Return karna zaroori hai
-                return base_url
+                # ✅ FIX: Dono ko fetch karna hai
+                base_url = video_data.get("url")        # e.g. https://sec-prod-mediacdn.../master.mpd
+                signed_prefix = video_data.get("signedUrl")  # e.g. ?URLPrefix=aHR0...
 
+                # Agar signedUrl attach nahi hai, toh check karo ki wo direct link hai ya nahi
+                if not signed_prefix:
+                    print("⚠️ signedUrl missing in response!")
+                    return base_url  # Fallback
+
+                # ✅ Combine karte hain (SignedUrl = base_url + signed_prefix)
+                final_url = base_url + signed_prefix
+
+                print("\n✅ FINAL COMBINED SIGNED URL:")
+                print(final_url)
+
+                return final_url
+                
     except Exception as e:
         print(f"Request Error: {e}")
         return None
