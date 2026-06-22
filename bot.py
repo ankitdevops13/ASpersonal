@@ -1107,10 +1107,9 @@ async def upload(bot: Client, m: Message):
             
                 
             elif '/master.mpd' in url or "d1d34p8vz63oiq.cloudfront.net" in url or "parentId=" in url or "childId=" in url:
-                parent_id, child_id = extract_id_url(url)
+                parent_id, child_id = pwextract_ids(url)
                 if not parent_id or not child_id:
                     print("❌ parentId/childId not found")
-                    print("Url:" url)
                     return 
                     
                 vid_url = await signed_videox(access_token, parent_id, child_id)
