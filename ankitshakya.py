@@ -293,67 +293,35 @@ import logging
 import os
 import shutil
 
-# Initializing global failed counter
-failed_counter = 0
-
-async def download_video(url, cmd, name):
+async def download_video(url,cmd, name):
+    download_cmd = f'{cmd} -R 25 --fragment-retries 25 --external-downloader aria2c --downloader-args "aria2c: -x 16 -j 32"'
     global failed_counter
-    aria2_args = '--external-downloader aria2c --downloader-args "aria2c:-x 16 -s 16 -j 32 -k 1M"'
-    download_cmd = f'{cmd} -R 25 --fragment-retries 25 {aria2_args}'
-    
-    print(f"Executing: {download_cmd}")
+    print(download_cmd)
     logging.info(download_cmd)
-    
-    # 2. NON-BLOCKING Execution: Use asyncio subprocess instead of subprocess.run
-    process = await asyncio.create_subprocess_shell(
-        download_cmd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE
-    )
-    
-    # Wait for the download to complete asynchronously
-    stdout, stderr = await process.communicate()
-    return_code = process.returncode
-
-    # 3. Handle Failures & Retries (Consolidated Logic)
-    is_target_provider = "visionias" in cmd or "penpencilvod" in cmd
-    
-    if return_code != 0 and is_target_provider and failed_counter < 10:
+    k = subprocess.run(download_cmd, shell=True)
+    if "visionias" in cmd and k.returncode != 0 and failed_counter <= 10:
         failed_counter += 1
-        print(f"Download failed. Retry attempt {failed_counter}/10 in 5 seconds...")
         await asyncio.sleep(5)
-        return await download_video(url, cmd, name)
-    
-    # Reset counter on success or max retries reached
+        await download_video(url, cmd, name)
     failed_counter = 0
-    
-    # 4. File Extension Verification
-    return verify_downloaded_file(name)
-
-
-def verify_downloaded_file(name):
-    """Checks which file format was successfully downloaded and returns its path."""
     try:
-        # Direct match
         if os.path.isfile(name):
             return name
-        
-        # Check explicit extensions
-        for ext in [".webm", ".mkv", ".mp4", ".mp4.webm"]:
-            if os.path.isfile(f"{name}{ext}"):
-                return f"{name}{ext}"
-            
-        # Check if extension was stripped or modified
-        base_name = os.path.splitext(name)[0]
-        for ext in [".mkv", ".mp4", ".webm"]:
-            if os.path.isfile(f"{base_name}{ext}"):
-                return f"{base_name}{ext}"
-            
+        elif os.path.isfile(f"{name}.webm"):
+            return f"{name}.webm"
+        name = name.split(".")[0]
+        if os.path.isfile(f"{name}.mkv"):
+            return f"{name}.mkv"
+        elif os.path.isfile(f"{name}.mp4"):
+            return f"{name}.mp4"
+        elif os.path.isfile(f"{name}.mp4.webm"):
+            return f"{name}.mp4.webm"
+
         return name
-    except Exception as e:
-        logging.error(f"Error while checking file path: {e}")
-        return f"{os.path.splitext(name)[0]}.mp4"
+    except FileNotFoundError as exc:
+        return os.path.isfile.splitext[0] + "." + "mp4"
         
+
 
 async def send_doc(bot: Client, m: Message, cc, ka, cc1, prog, count, name):
     reply = await m.reply_text(f"**Uploading ..🚀..** - `{name}`\n<pre><code>╰────⌈𝐀𝐧𝐤𝐢𝐭 𝐒𝐡𝐚𝐤𝐲𝐚™🇮🇳⌋────╯</code></pre>")
