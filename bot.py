@@ -467,6 +467,15 @@ import aiohttp
 import asyncio
 from urllib.parse import urlparse, parse_qs
 
+async def generate_ffmpeg_cmd(url, name):
+    # Agar filename ke aage pehle se .mp4 nahi laga hai, toh jod dein
+    if not filename.endswith('.mp4'):
+        filename = f"{name}.mp4"
+        
+    # Sahi FFmpeg command format return karega
+    return f'ffmpeg -i "{url}" -c copy -y "{filename}"'
+    
+
 async def signed_videox(access_token, parent_id, child_id):
     if not access_token.startswith("Bearer "):
         access_token = f"Bearer {access_token}"
@@ -1431,7 +1440,7 @@ async def upload(bot: Client, m: Message):
                     emoji_message = await show_random_emojis(message)
                     Show = f"<pre><code>{site_name}</code></pre>\n\n🚀 𝐏𝐑𝐎𝐆𝐑𝐄𝐒𝐒...» {progress:.2f}%\n\n📥 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃 🚀.. »\n\n├──🎞️ 📊 Total Links = {len(links)}\n\n├──🎞️ ⚡️ Currently On = {str(count).zfill(3)}\n\n├──⏳ Remaining URL = {remaining_links}\n\n├──🎞️ Title:- {name}\n\n├──⌨️ Resolution » {raw_text2}\n\n├──🖼️ Thumbnail » {raw_text6}\n\n├── Url: [{url}]\n\n├──🤖 Bot Made By: 『ᴀɴᴋɪᴛ sʜᴀᴋʏᴀ』"
                     prog = await m.reply_text(Show)
-                    res_file = await ankit_videodl(url, name)
+                    res_file = await generate_ffmpeg_cmd(url, name)
                     filename = res_file
                     await prog.delete(True)
                     await emoji_message.delete()
